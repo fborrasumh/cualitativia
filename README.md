@@ -1,5 +1,7 @@
 # CualitativIA
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23077431.svg)](https://doi.org/10.5281/zenodo.23077431)
+
 **Aplicación:** https://fborrasumh.github.io/cualitativia/
 
 Investigación cualitativa con **datos sensibles**: entrevistas y grupos focales que se transcriben **en tu ordenador**, se anonimizan antes de cualquier IA y se analizan con árboles de códigos a varios niveles y desde varias interpretaciones, con citas literales verificadas. Exporta a MAXQDA (REFI-QDA). Aplicación de un solo fichero (`index.html`), sin servidor, con el diseño de la familia Forja.
@@ -35,6 +37,12 @@ Investigación cualitativa con **datos sensibles**: entrevistas y grupos focales
 - El análisis lo hace la investigadora: la IA propone árboles alternativos como apoyo.
 
 Desarrollada a partir de las necesidades de investigación cualitativa con familias de personas con discapacidad planteadas por M.ª Carmen Lillo Navarro (UMH).
+
+## Cómo citar
+
+Borrás Rocher, F. (2026). *CualitativIA* (versión 1.0.0) [Software]. Universidad Miguel Hernández de Elche. https://doi.org/10.5281/zenodo.23077431
+
+El DOI es el de concepto: apunta siempre a la última versión. GitHub ofrece la cita en APA y BibTeX con el botón *Cite this repository*, a partir de `CITATION.cff`.
 
 Forma parte del catálogo [Herramientas IA para la academia](https://fborrasumh.github.io/ia/).
 
