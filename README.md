@@ -4,7 +4,7 @@
 
 Aplicación web de un solo fichero (`index.html`), sin servidor ni instalación. Pensada para investigación en ciencias de la salud y sociales.
 
-> Fernando Borrás Rocher (Universidad Miguel Hernández de Elche) y María del Carmen Lillo Navarro
+> Fernando Borrás Rocher y María del Carmen Lillo Navarro · Universidad Miguel Hernández de Elche
 
 ---
 
