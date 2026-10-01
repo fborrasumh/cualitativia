@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src https://api.openai.com; worker-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src https://api.openai.com https://cdn.jsdelivr.net https://huggingface.co https://*.huggingface.co https://*.hf.co; worker-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 
 <script id="gpt6-luna-shim">
 /* gpt-6-luna: modelo por defecto con temperatura=1 (actualización sep-2026).
@@ -435,7 +435,7 @@ footer hr{border:0;border-top:1px solid var(--linea);margin:0 0 14px}
 .fich .h{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.fich .h b{flex:1;font-size:15px}
 .disp{font-size:12px;font-weight:800;border-radius:999px;padding:2px 9px}.disp.ok{background:var(--forjado-suave);color:var(--forjado)}.disp.ko{background:var(--brasa-suave);color:var(--brasa)}.disp.dl{background:#FFF1D6;color:#8A5A00}
 .segs{max-height:60vh;overflow:auto;border:1px solid var(--linea-2);border-radius:12px;background:#fff}
-.seg{display:grid;grid-template-columns:62px 130px 1fr 30px;gap:8px;align-items:start;padding:7px 10px;border-bottom:1px solid var(--linea-2);font-size:14px}
+.seg{display:grid;grid-template-columns:62px 130px 1fr 30px 30px;gap:8px;align-items:start;padding:7px 10px;border-bottom:1px solid var(--linea-2);font-size:14px}
 .seg:hover{background:var(--papel)}.seg .tm{font:12px var(--mono);color:var(--acero-claro);padding-top:5px;cursor:pointer}.seg .tm:hover{color:var(--brasa)}
 .seg select{padding:4px 6px;border:1.5px solid var(--linea);border-radius:8px;font-size:12.5px;width:100%}.seg select.vac{border-color:#E9A23B;background:#FFF8E6}
 .seg [contenteditable]{outline:none;line-height:1.55;padding:3px 4px;border-radius:6px}.seg [contenteditable]:focus{background:#FFFBEA}
@@ -586,6 +586,9 @@ table.bp td.cell{padding:0;min-width:64px}
   .screen.on{display:block!important}
   .paper,.carta{box-shadow:none;border:0;padding:0}
 }
+.seg.dud{background:#FFF8E6;box-shadow:inset 4px 0 0 #E9A23B}.seg .okbtn{color:#0B5A4E}
+.voz{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:7px 0;border-bottom:1px solid var(--linea-2)}.voz b{min-width:70px}.voz select{padding:5px 8px;border:1.5px solid var(--linea);border-radius:8px}
+.nodo details{margin:4px 0}.nodo summary{cursor:pointer;font-size:12.5px;color:var(--acero)}
 </style>
 </head>
 <body>
@@ -656,20 +659,20 @@ table.bp td.cell{padding:0;min-width:64px}
   <div class="hero">
     <p class="eyebrow">Investigación cualitativa con datos sensibles · entrevistas y grupos focales · Universidad Miguel Hernández de Elche</p>
     <h1>Tus entrevistas, <em>en tu ordenador</em></h1>
-    <p class="lede">Transcribe audio y vídeo con el reconocimiento de voz local de Chrome: el audio no sale de tu equipo. Asigna quién habla, anonimiza nombres, lugares y centros, y solo entonces, si quieres, pide a la IA árboles de códigos a varios niveles y desde varias interpretaciones, con citas literales comprobadas. Lo exportas a MAXQDA y sigues trabajando como siempre.</p>
+    <p class="lede">Transcribe audio y vídeo en tu propio ordenador: separa las voces, localiza los nombres y los corta del audio antes de enviar a OpenAI solo trozos sueltos, sin nombres (o, si lo prefieres, usa solo el reconocimiento local de Chrome, sin enviar nada). Revisa los turnos dudosos, asigna quién habla, anonimiza nombres, lugares y centros y, solo entonces, si quieres, pide a la IA árboles de códigos a varios niveles y desde varias interpretaciones, con citas literales comprobadas. Lo exportas a MAXQDA y sigues trabajando como siempre.</p>
     <div class="actions"><button class="btn btn-primary btn-big" id="btnStart" type="button"><svg class="i"><use href="#i-play"/></svg>Empezar un estudio</button><button class="btn btn-ghost btn-big" id="btnDemo" type="button"><svg class="i"><use href="#i-eye"/></svg>Ver un estudio de ejemplo</button></div>
     <p class="quote">El análisis lo piensas tú; <span>la IA te enseña caminos que no habías visto.</span></p>
   </div>
   <h2 class="sec-title">Dónde va cada cosa</h2>
   <div class="zonas">
-    <div class="zona l"><h4>Siempre en tu ordenador</h4><ul><li>El audio y el vídeo, y su transcripción (reconocimiento local de Chrome)</li><li>Los nombres reales y la clave para reidentificar</li><li>La anonimización, las matrices de métodos mixtos y la exportación a MAXQDA</li><li>Tus estudios, guardados en este navegador</li></ul></div>
-    <div class="zona n"><h4>Solo si lo pides, y anonimizado</h4><ul><li>El análisis con IA envía a OpenAI el texto <b>ya anonimizado</b>: códigos en lugar de nombres</li><li>Antes de cada envío ves exactamente qué sale y la app vuelve a buscar datos personales</li><li>La página no puede conectar con ningún otro servidor: lo impide su política de seguridad</li><li>Sin clave, la app funciona entera salvo la propuesta de códigos</li></ul></div>
+    <div class="zona l"><h4>Siempre en tu ordenador</h4><ul><li>Tus estudios, guardados en este navegador</li><li>Los nombres reales y la clave para reidentificar</li><li>La revisión de la transcripción, la anonimización, las matrices de métodos mixtos y la exportación a MAXQDA (sin librerías externas)</li><li>Con la ruta de Chrome: también el audio y su transcripción</li></ul></div>
+    <div class="zona n"><h4>Solo si lo eliges, y con salvaguardas</h4><ul><li><b>Transcripción privada:</b> el audio completo se procesa en tu navegador y no se sube a ninguna parte. A OpenAI solo llegan trozos cortos, en orden aleatorio, con los nombres detectados ya cortados. La primera vez, la app <i>descarga</i> los modelos locales (Whisper y otros) desde jsDelivr y Hugging Face; no envía nada hacia ellos. La detección automática no es infalible: revisa el resultado</li><li><b>Análisis con IA:</b> a OpenAI va el texto <b>ya anonimizado</b>; antes de cada envío ves qué sale y la app vuelve a buscar datos personales</li><li>Esta página solo puede conectar con OpenAI y, para descargar los modelos locales, con jsDelivr y Hugging Face: lo impone su política de seguridad</li><li>Sin clave, la app funciona entera salvo la propuesta de códigos</li></ul></div>
   </div>
   <h2 class="sec-title">Siete pasos</h2>
   <div class="journey" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">
     <div class="jstop" style="--c:#1F6FB2"><span class="jn">1</span><div class="ji"><svg class="i"><use href="#i-users"/></svg></div><b>Estudio</b><span>Objetivos y participantes con código.</span></div>
-    <div class="jstop" style="--c:#6B4FD8"><span class="jn">2</span><div class="ji"><svg class="i"><use href="#i-phone"/></svg></div><b>Transcribir</b><span>Local, en tiempo real.</span></div>
-    <div class="jstop" style="--c:#0E8C7A"><span class="jn">3</span><div class="ji"><svg class="i"><use href="#i-user"/></svg></div><b>Quién habla</b><span>Turnos y hablantes.</span></div>
+    <div class="jstop" style="--c:#6B4FD8"><span class="jn">2</span><div class="ji"><svg class="i"><use href="#i-phone"/></svg></div><b>Transcribir</b><span>Privado, en tu equipo.</span></div>
+    <div class="jstop" style="--c:#0E8C7A"><span class="jn">3</span><div class="ji"><svg class="i"><use href="#i-user"/></svg></div><b>Quién habla</b><span>Voces y turnos dudosos.</span></div>
     <div class="jstop" style="--c:#E4572E"><span class="jn">4</span><div class="ji"><svg class="i"><use href="#i-shield"/></svg></div><b>Anonimizar</b><span>Nombres, lugares, centros, fechas.</span></div>
     <div class="jstop" style="--c:#C98200"><span class="jn">5</span><div class="ji"><svg class="i"><use href="#i-sparkles"/></svg></div><b>Analizar</b><span>Árboles con profundidad desigual.</span></div>
     <div class="jstop" style="--c:#1F6FB2"><span class="jn">6</span><div class="ji"><svg class="i"><use href="#i-grid"/></svg></div><b>Métodos mixtos</b><span>Matrices por participante y atributo.</span></div>
@@ -693,24 +696,41 @@ table.bp td.cell{padding:0;min-width:64px}
 
 <!-- ═════ 2 · TRANSCRIBIR ═════ -->
 <section class="screen" data-step="2">
-  <header class="sh" style="--c:#6B4FD8"><div class="sh-ico"><svg class="i"><use href="#i-phone"/></svg></div><div><p class="sh-step">Paso 2 de 7</p><h2>Transcribir</h2><p class="sh-lede">Reconocimiento de voz de Chrome en modo local obligatorio: si el idioma no está instalado en tu equipo, la app no transcribe en la nube, te lo dice. La transcripción va al ritmo de la grabación.</p></div></header>
+  <header class="sh" style="--c:#6B4FD8"><div class="sh-ico"><svg class="i"><use href="#i-phone"/></svg></div><div><p class="sh-step">Paso 2 de 7</p><h2>Transcribir</h2><p class="sh-lede">La app hace aquí todo el trabajo: Whisper local da el texto con tiempos, separa las voces, busca nombres y datos personales y los corta del audio, y solo entonces envía a OpenAI trozos cortos, sin nombres y en orden aleatorio, para obtener una transcripción mucho mejor. Antes de enviar nada verás cuántos trozos salen y cuánto costará. Alternativa: «Solo Chrome», que no envía nada pero es lenta y no separa voces.</p></div></header>
   <div id="soporte"></div>
   <div class="cols">
     <div>
-      <div class="card"><label class="drop" id="drop" tabindex="0"><svg class="i"><use href="#i-upload"/></svg><b>Arrastra aquí audios o vídeos</b><span>mp3, m4a, wav, ogg, mp4, webm… · no se suben a ningún sitio</span><input type="file" id="fileMedia" multiple accept="audio/*,video/*" hidden></label>
-        <div class="actions" style="margin-top:10px"><label class="btn btn-ghost btn-sm" for="fileTrans" style="cursor:pointer"><svg class="i"><use href="#i-doc"/></svg>Importar una transcripción ya hecha</label><input type="file" id="fileTrans" multiple accept=".txt,.docx,.vtt,.srt" hidden><span class="help" style="margin:0">Texto, Word, VTT o SRT. Reconoce «Hablante: texto» y las marcas de tiempo de MAXQDA.</span></div></div>
+      <div class="card" id="rutaPriv"><h3><svg class="i"><use href="#i-shield"/></svg>Transcripción privada en este ordenador</h3>
+        <p class="sub" style="margin-top:0">Arrastra los audios o vídeos (mp3, m4a, wav, mp4…). El audio completo se queda en tu navegador. Hay <b>dos modelos</b>: uno local (Whisper) que solo sirve para localizar nombres y comprobar, y uno de OpenAI que hace la transcripción final de trozos sin nombres.</p>
+        <label class="drop" id="drop" tabindex="0"><svg class="i"><use href="#i-upload"/></svg><b>Añadir audio o vídeo</b><span>No se suben a ningún sitio. Después pulsa «Transcribir en privado» en cada fichero.</span><input type="file" id="fileMedia" multiple accept="audio/*,video/*" hidden></label>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:12px">
+          <div class="field" style="margin:0"><label for="modeloTr">Modelo de transcripción (OpenAI)</label><select id="modeloTr"><option value="gpt-4o-mini-transcribe">gpt-4o-mini-transcribe — 0,003 $/min</option><option value="gpt-4o-transcribe">gpt-4o-transcribe — 0,006 $/min</option><option value="whisper-1">whisper-1 — 0,006 $/min</option></select><p class="help" style="margin:4px 0 0">El primero es el más barato de OpenAI.</p></div>
+          <div class="field" style="margin:0"><label for="pvWhisper">Modelo local (palabras y tiempos)</label><select id="pvWhisper"><option value="tiny">tiny · muy rápido, menos preciso</option><option value="base">base · equilibrado</option><option value="small">small · más preciso, más lento</option></select></div>
+        </div>
+        <details style="margin-top:10px"><summary style="cursor:pointer;font-size:14px;font-weight:600">Ajustes avanzados</summary>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:10px">
+            <div class="field" style="margin:0"><label for="pvVoces">Separar voces</label><select id="pvVoces"><option value="rapido">Rápido (sin descargas)</option><option value="preciso">Preciso (modelo WavLM; mejor con tarjeta gráfica)</option><option value="no">No separar</option></select></div>
+            <div class="field" style="margin:0"><label for="pvNVoces">Número de voces</label><input type="number" id="pvNVoces" min="1" max="8" placeholder="automático"></div>
+            <div class="field" style="margin:0"><label for="pvDisp">Cálculo local</label><select id="pvDisp"><option value="auto">Tarjeta gráfica si hay (WebGPU)</option><option value="cpu">Solo procesador</option></select></div>
+            <label style="display:flex;gap:8px;font-size:14px;margin:0;align-items:flex-start"><input type="checkbox" id="pvNer" style="margin-top:3px"><span>Buscar además nombres y lugares con un modelo de lenguaje (descarga un modelo extra; atrapa nombres que no están en tu lista)</span></label>
+          </div></details>
+        <p class="help" style="margin-bottom:0"><b>Qué sale de tu ordenador:</b> a OpenAI, solo trozos de audio de un turno cada uno, sin las zonas con datos personales detectados, con nombre de fichero aleatorio y en orden aleatorio. <b>No sale</b> el audio completo, la lista de nombres ni la transcripción local. <b>La primera vez</b> la app descarga los modelos (cientos de MB en total) desde jsDelivr y Hugging Face y los guarda en la caché del navegador. Los audios muy largos (más de una o dos horas) pueden agotar la memoria del navegador: en ese caso, divídelos. Si el reconocimiento local no oye bien un nombre, ese trozo puede llegar a OpenAI: por eso la app lo comprueba después y te avisa.</p></div>
+      <div class="card"><h3><svg class="i"><use href="#i-upload"/></svg>Importar una transcripción ya hecha</h3>
+        <p class="help" style="margin-top:0">Texto, Word, VTT o SRT; reconoce «Hablante: texto» y las marcas de MAXQDA.</p>
+        <div class="actions"><label class="btn btn-ghost btn-sm" for="fileTrans" style="cursor:pointer"><svg class="i"><use href="#i-upload"/></svg>Importar transcripción</label><input type="file" id="fileTrans" multiple accept=".txt,.docx,.vtt,.srt" hidden></div></div>
       <div id="ficheros"></div>
     </div>
-    <aside class="card sticky"><h3><svg class="i"><use href="#i-globe"/></svg>Idiomas y variantes</h3><p class="sub">Elige la variante de cada fichero (por ejemplo, español de Argentina): el reconocimiento se adapta a su pronunciación y vocabulario. Gallego y valenciano solo funcionan si Chrome ofrece su paquete local en tu equipo.</p><p class="help" style="margin:0">Consejo: mientras transcribe, puedes escuchar o silenciar. Deja la pestaña visible y el equipo enchufado.</p></aside>
+    <aside class="card sticky"><h3><svg class="i"><use href="#i-globe"/></svg>Idiomas y variantes</h3><p class="sub">Elige el idioma de cada fichero. La transcripción privada usa solo el idioma base (por ejemplo, español); la variante (Argentina, México…) solo cuenta en «Solo Chrome», que además necesita el paquete local de ese idioma.</p><p class="help" style="margin:0">Consejo: deja la pestaña visible y el equipo enchufado mientras transcribe. Puedes pulsar «Detener» en cualquier momento: no se guarda nada a medias.</p></aside>
   </div>
 </section>
 
 <!-- ═════ 3 · HABLANTES ═════ -->
 <section class="screen" data-step="3">
-  <header class="sh" style="--c:#0E8C7A"><div class="sh-ico"><svg class="i"><use href="#i-user"/></svg></div><div><p class="sh-step">Paso 3 de 7</p><h2>Quién habla y revisión</h2><p class="sh-lede">La app divide en turnos por las pausas, pero no reconoce voces: asigna cada turno a su participante. Pulsa la marca de tiempo para escuchar ese fragmento. Corrige el texto directamente.</p></div></header>
-  <div class="actions" style="margin-bottom:10px"><select id="selTrans" style="padding:7px 10px;border:1.5px solid var(--linea);border-radius:9px;min-width:240px"></select><span class="help" id="hablInfo" style="margin:0"></span><span style="margin-left:auto" class="actions"><button class="btn btn-ghost btn-sm" type="button" data-ins="[llora]">[llora]</button><button class="btn btn-ghost btn-sm" type="button" data-ins="[risas]">[risas]</button><button class="btn btn-ghost btn-sm" type="button" data-ins="[silencio]">[silencio]</button><button class="btn btn-ghost btn-sm" type="button" data-ins="[se solapan]">[se solapan]</button><button class="btn btn-ghost btn-sm" type="button" data-ins="[inaudible]">[inaudible]</button></span></div>
+  <header class="sh" style="--c:#0E8C7A"><div class="sh-ico"><svg class="i"><use href="#i-user"/></svg></div><div><p class="sh-step">Paso 3 de 7</p><h2>Quién habla y revisión</h2><p class="sh-lede">Si la app ha separado las voces, asigna primero cada voz a su participante. Los turnos en ámbar son los que el sistema duda de haber entendido bien: empieza por ellos. Si transcribiste en el navegador, asigna cada turno a mano (Chrome no reconoce voces). Pulsa la marca de tiempo para oír el fragmento y corrige el texto directamente.</p></div></header>
+  <div class="card" id="voces" style="margin-bottom:10px;display:none"></div>
+  <div class="actions" style="margin-bottom:10px"><select id="selTrans" style="padding:7px 10px;border:1.5px solid var(--linea);border-radius:9px;min-width:240px"></select><span class="help" id="hablInfo" style="margin:0"></span><label style="display:flex;gap:5px;font-size:13px;margin:0"><input type="checkbox" id="soloDud"> solo dudosos</label><button class="btn btn-ghost btn-sm" type="button" id="btnSigDud">Siguiente dudoso ↓</button><span style="margin-left:auto" class="actions"><button class="btn btn-ghost btn-sm" type="button" data-ins="[llora]">[llora]</button><button class="btn btn-ghost btn-sm" type="button" data-ins="[risas]">[risas]</button><button class="btn btn-ghost btn-sm" type="button" data-ins="[silencio]">[silencio]</button><button class="btn btn-ghost btn-sm" type="button" data-ins="[se solapan]">[se solapan]</button><button class="btn btn-ghost btn-sm" type="button" data-ins="[inaudible]">[inaudible]</button></span></div>
   <div class="segs" id="segs"></div>
-  <p class="help">Las etiquetas entre corchetes se insertan donde está el cursor. «Unir» junta un turno con el anterior; Intro dentro de un turno lo divide.</p>
+  <p class="help">Las etiquetas entre corchetes se insertan donde está el cursor. «Unir» junta un turno con el anterior; Intro dentro de un turno lo divide (útil si dos personas hablan en el mismo turno). Si el texto dice [REDACTADO], la app cortó ahí un dato personal antes de enviar el audio: escucha el audio original y escribe lo que falta; en el paso 4 se anonimizará.</p>
 </section>
 
 <!-- ═════ 4 · ANONIMIZAR ═════ -->
@@ -729,9 +749,10 @@ table.bp td.cell{padding:0;min-width:64px}
 
 <!-- ═════ 5 · ANALIZAR ═════ -->
 <section class="screen" data-step="5">
-  <header class="sh" style="--c:#C98200"><div class="sh-ico"><svg class="i"><use href="#i-sparkles"/></svg></div><div><p class="sh-step">Paso 5 de 7</p><h2>Árboles de códigos</h2><p class="sh-lede" id="anLede">Elige una o varias interpretaciones. Cada rama se profundiza mientras haya ideas distintas con evidencia propia: unas llegarán a cuatro niveles y otras se quedarán en uno.</p></div></header>
+  <header class="sh" style="--c:#C98200"><div class="sh-ico"><svg class="i"><use href="#i-sparkles"/></svg></div><div><p class="sh-step">Paso 5 de 7</p><h2>Árboles de códigos</h2><p class="sh-lede" id="anLede">Elige una o varias interpretaciones. La profundidad máxima es un <b>tope</b>, no una cifra garantizada: cada rama solo se subdivide si hay subtemas distintos con evidencia propia, así que una sola entrevista corta suele dar 1-2 niveles. En modo exhaustivo la IA revisa todos los fragmentos contra cada código, y tú puedes pedir más profundidad en cualquier código con el botón ✦.</p></div></header>
   <div class="card"><h3>Interpretaciones</h3><div class="lentes" id="lentes"></div><div class="field" id="marcoWrap" style="margin:10px 0 0"><label for="marco">Marco teórico para la tercera interpretación</label><input type="text" id="marco" placeholder="Modelo de calidad de vida familiar (Turnbull), CIF, modelo social de la discapacidad…"></div>
-    <div class="grid3" style="margin-top:10px"><div class="field"><label for="maxNiv">Profundidad máxima</label><select id="maxNiv"><option>3</option><option selected>4</option><option>5</option></select></div><div class="field"><label for="minSeg">Fragmentos mínimos para subdividir</label><select id="minSeg"><option>2</option><option selected>3</option><option>4</option></select></div><div class="field"><label for="tope">Tope de consultas por interpretación</label><select id="tope"><option>20</option><option selected>40</option><option>80</option></select></div></div>
+    <div class="field" style="margin:10px 0 0"><label for="exhaust">Exhaustividad de la codificación</label><select id="exhaust"><option value="exh" selected>Exhaustiva: revisa todos los fragmentos contra cada código (recomendada)</option><option value="std">Estándar: más rápida, asigna solo lo más claro</option></select></div>
+    <div class="grid3" style="margin-top:10px"><div class="field"><label for="maxNiv">Profundidad máxima (tope)</label><select id="maxNiv"><option>3</option><option selected>4</option><option>5</option></select></div><div class="field"><label for="minSeg">Fragmentos mínimos para subdividir</label><select id="minSeg"><option>2</option><option selected>3</option><option>4</option></select></div><div class="field"><label for="tope">Tope de consultas por interpretación</label><select id="tope"><option>20</option><option selected>40</option><option>80</option></select></div></div>
     <div class="actions"><button class="btn btn-primary" id="btnAnalizar" type="button"><svg class="i"><use href="#i-sparkles"/></svg>Revisar el envío y analizar</button><span class="help" id="anInfo" style="margin:0"></span></div><div id="anLog" style="margin-top:10px;font-size:13.5px;line-height:1.8"></div></div>
   <div class="tabs" id="tabs"></div>
   <div class="cols"><div class="arbol" id="arbol"><p class="empty">Aún no hay árboles.</p></div><aside class="card sticky" id="arbolSide"></aside></div>
@@ -750,7 +771,7 @@ table.bp td.cell{padding:0;min-width:64px}
   <header class="sh" style="--c:#0E8C7A"><div class="sh-ico"><svg class="i"><use href="#i-download"/></svg></div><div><p class="sh-step">Paso 7 de 7</p><h2>A MAXQDA y al informe</h2><p class="sh-lede">Tú decides si exportas el texto original o el anonimizado. Las exportaciones se generan en tu ordenador.</p></div></header>
   <div class="cols"><div>
     <div class="card"><h3>Transcripciones</h3><div class="actions"><label style="display:flex;gap:6px;font-size:14px;margin:0"><input type="radio" name="vers" value="anon" checked> Anonimizadas</label><label style="display:flex;gap:6px;font-size:14px;margin:0"><input type="radio" name="vers" value="orig"> Originales</label></div><div class="actions" style="margin-top:10px"><button class="btn btn-ghost btn-sm" id="expTxt" type="button">Texto para MAXQDA (.txt, una por fichero)</button><button class="btn btn-word btn-sm" id="expTransDocx" type="button">Word</button></div><p class="help">Formato «Hablante: texto» con marcas de tiempo #hh:mm:ss-0#, que MAXQDA reconoce al importar transcripciones y grupos focales.</p></div>
-    <div class="card"><h3>Códigos</h3><div class="actions"><select id="selExp" style="padding:7px 10px;border:1.5px solid var(--linea);border-radius:9px"></select><button class="btn btn-ghost btn-sm" id="expQdc" type="button">Libro de códigos REFI-QDA (.qdc)</button><button class="btn btn-ghost btn-sm" id="expQdpx" type="button">Proyecto REFI-QDA (.qdpx)</button><button class="btn btn-word btn-sm" id="expInf" type="button">Informe con citas (Word)</button></div><p class="help">MAXQDA, ATLAS.ti y NVivo importan el estándar REFI-QDA. El proyecto incluye las transcripciones y los fragmentos codificados; compruébalo primero con una copia en tu MAXQDA.</p></div>
+    <div class="card"><h3>Códigos</h3><div class="actions"><select id="selExp" style="padding:7px 10px;border:1.5px solid var(--linea);border-radius:9px"></select><button class="btn btn-ghost btn-sm" id="expQdc" type="button">Libro de códigos REFI-QDA (.qdc)</button><button class="btn btn-ghost btn-sm" id="expQdpx" type="button">Proyecto REFI-QDA (.qdpx)</button><button class="btn btn-word btn-sm" id="expInf" type="button">Informe con citas (Word)</button></div><label style="display:flex;gap:6px;font-size:13.5px;margin:10px 0 0"><input type="checkbox" id="expTodos" checked> En el informe, incluir también todos los fragmentos codificados (no solo las citas destacadas)</label><p class="help">MAXQDA, ATLAS.ti y NVivo importan el estándar REFI-QDA. El proyecto incluye las transcripciones y los fragmentos codificados; compruébalo primero con una copia en tu MAXQDA.</p></div>
   </div>
   <aside class="card sticky"><h3><svg class="i"><use href="#i-key"/></svg>Copia del estudio</h3><p class="sub">Contiene datos reales: guárdala cifrada o en un lugar protegido.</p><div class="actions" style="flex-direction:column;align-items:stretch"><button class="btn btn-ghost btn-sm" id="expJson" type="button">Copia completa (.json)</button><button class="btn btn-ghost btn-sm" id="expClave" type="button">Clave de reidentificación (.csv)</button></div></aside></div>
 </section>
@@ -760,7 +781,7 @@ table.bp td.cell{padding:0;min-width:64px}
 <div class="bottomnav"><div class="bn-in"><button class="btn btn-ghost" id="navBack" type="button"><svg class="i"><use href="#i-left"/></svg>Atrás</button><div class="bn-hint" id="navHint"></div><button class="btn btn-primary" id="navNext" type="button"><span id="navNextTxt">Siguiente</span><svg class="i"><use href="#i-right"/></svg></button></div></div>
 <div class="modal" id="mEnvio" role="dialog" aria-modal="true" aria-labelledby="mEnT"><div class="modal-box envio"><div class="modal-head"><h2 id="mEnT">Esto es lo que saldría hacia OpenAI</h2><button type="button" data-close>Cerrar</button></div><div class="modal-body"><div id="envioInfo"></div><pre id="envioTxt"></pre><label style="display:flex;gap:8px;font-size:14px;margin:12px 0"><input type="checkbox" id="envioOk"> He revisado el texto y confirmo que puede salir de mi ordenador anonimizado.</label><div class="actions"><button class="btn btn-primary" id="envioSi" type="button" disabled>Enviar y analizar</button><button class="btn btn-ghost" data-close type="button">Cancelar</button></div></div></div></div>
 <div class="modal" id="mProy" role="dialog" aria-modal="true" aria-labelledby="mPrT"><div class="modal-box"><div class="modal-head"><h2 id="mPrT">Mis estudios</h2><button type="button" data-close>Cerrar</button></div><div class="modal-body"><div id="proys"></div><div class="actions" style="margin-top:12px"><label class="btn btn-ghost btn-sm" for="fileJson" style="cursor:pointer"><svg class="i"><use href="#i-upload"/></svg>Abrir una copia (.json)</label><input type="file" id="fileJson" accept=".json" hidden></div></div></div></div>
-<div class="modal" id="mAjustes" role="dialog" aria-modal="true" aria-labelledby="mAjT"><div class="modal-box"><div class="modal-head"><h2 id="mAjT">Inteligencia artificial (opcional)</h2><button type="button" data-close>Cerrar</button></div><div class="modal-body"><p class="sub" style="margin-top:0">Solo se usa para proponer árboles de códigos, y solo con texto anonimizado tras tu confirmación. Si tu proyecto lo exige, consulta antes con el comité de ética o el delegado de protección de datos: OpenAI trata los datos fuera de la UE salvo acuerdo específico.</p><label style="display:flex;gap:8px;font-size:14px;margin:0 0 12px"><input type="checkbox" id="sinIA"> Modo sin IA: bloquear cualquier envío</label><div class="field"><label for="apiKey">Clave de OpenAI</label><div class="keyrow"><input type="password" id="apiKey" placeholder="sk-proj-…" autocomplete="off"><button class="eye" id="btnEye" type="button" aria-label="Mostrar u ocultar"><svg class="i"><use href="#i-eye"/></svg></button></div></div><div class="field" style="margin:0"><label for="modelo">Modelo</label><select id="modelo"><option value="gpt-6-luna">gpt-6-luna (recomendado)</option><option value="gpt-4.1">gpt-4.1</option><option value="gpt-4.1-mini">gpt-4.1-mini</option></select></div></div></div></div>
+<div class="modal" id="mAjustes" role="dialog" aria-modal="true" aria-labelledby="mAjT"><div class="modal-box"><div class="modal-head"><h2 id="mAjT">Inteligencia artificial (opcional)</h2><button type="button" data-close>Cerrar</button></div><div class="modal-body"><p class="sub" style="margin-top:0">Solo se usa para proponer árboles de códigos, y solo con texto anonimizado tras tu confirmación. Si tu proyecto lo exige, consulta antes con el comité de ética o el delegado de protección de datos: OpenAI trata los datos fuera de la UE salvo acuerdo específico.</p><label style="display:flex;gap:8px;font-size:14px;margin:0 0 12px"><input type="checkbox" id="sinIA"> Modo sin IA: bloquear cualquier envío</label><div class="field"><label for="apiKey">Clave de OpenAI</label><div class="keyrow"><input type="password" id="apiKey" placeholder="sk-proj-…" autocomplete="off"><button class="eye" id="btnEye" type="button" aria-label="Mostrar u ocultar"><svg class="i"><use href="#i-eye"/></svg></button></div></div><div class="field" style="margin:0"><label for="modelo">Modelo de análisis (texto anonimizado)</label><select id="modelo"><option value="gpt-6-luna">gpt-6-luna (recomendado)</option><option value="gpt-4.1">gpt-4.1</option><option value="gpt-4.1-mini">gpt-4.1-mini</option></select></div><div class="field" style="margin:12px 0 0"><label for="modeloTrM">Modelo de transcripción (audio sin nombres)</label><select id="modeloTrM"><option value="gpt-4o-mini-transcribe">gpt-4o-mini-transcribe — 0,003 $/min (el más barato)</option><option value="gpt-4o-transcribe">gpt-4o-transcribe — 0,006 $/min</option><option value="whisper-1">whisper-1 (0,006 $/min)</option></select></div></div></div></div>
 <div class="modal" id="mHelp" role="dialog" aria-modal="true" aria-labelledby="mHelpT"><div class="modal-box"><div class="modal-head"><h2 id="mHelpT">Ayuda</h2><button type="button" data-close>Cerrar</button></div><div class="modal-body"><div class="glos" id="glos"></div></div></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
@@ -779,7 +800,7 @@ const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u030
 const hms = s => { s = Math.max(0, Math.round(s || 0)); return [Math.floor(s / 3600), Math.floor(s / 60) % 60, s % 60].map(x => String(x).padStart(2, '0')).join(':'); };
 function toast(m, ms = 4000){ const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('on'), ms); }
 function dl(n, c, t){ const b = c instanceof Blob ? c : new Blob([c], {type:t}); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = n; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 1500); }
-function cargaLib(urls){ return urls.reduce((p,u) => p.catch(() => new Promise((ok,ko) => { const s = document.createElement('script'); s.src = u; s.onload = ok; s.onerror = () => { s.remove(); ko(); }; document.head.appendChild(s); })), Promise.reject()).catch(() => { throw new Error('No se pudo cargar una librería: ¿hay conexión?'); }); }
+function cargaLib(urls, que = 'una librería externa'){ return urls.reduce((p,u) => p.catch(() => new Promise((ok,ko) => { const s = document.createElement('script'); s.src = u; s.onload = ok; s.onerror = () => { s.remove(); ko(); }; document.head.appendChild(s); })), Promise.reject()).catch(() => { throw new Error(`No se pudo cargar ${que} (¿sin conexión, o bloqueada por la red de tu centro?)`); }); }
 
 /* ══════════ ESTUDIO (IndexedDB local) ══════════ */
 const nuevo = () => ({id:'E' + Date.now(), titulo:'', objetivos:'', attrName:'Grupo', participantes:[{codigo:'P1', nombre:'', rol:'', attr:''}], trans:[], ents:[], arboles:[], creado:Date.now()});
@@ -790,6 +811,9 @@ let _g; function guarda(){ if(P._demo) return; clearTimeout(_g); _g = setTimeout
 const MEDIA = {};   /* ficheros de esta sesión: nunca se guardan ni se envían */
 const hablantes = () => [{codigo:'MOD', nombre:'Moderadora / entrevistadora'}, ...P.participantes.filter(p => p.codigo)];
 const todosSegs = () => P.trans.flatMap(t => t.segs.map(s => ({...s, tr:t.id})));
+const nuevoIdT = () => 'T' + (Math.max(0, ...P.trans.map(t => +String(t.id).replace(/\D/g, '') || 0)) + 1);
+/* estudios guardados antes de esta versión pueden tener dos ficheros con el mismo id: se separan al abrirlos */
+function arreglaIds(E){ const vistos = new Set(); let max = Math.max(0, ...E.trans.map(t => +String(t.id).replace(/\D/g, '') || 0)); E.trans.forEach(t => { if(vistos.has(t.id)){ const viejo = t.id; t.id = 'T' + (++max); t.segs.forEach(s => { if(typeof s.id === 'string' && s.id.startsWith(viejo + '-')) s.id = t.id + s.id.slice(viejo.length); }); } vistos.add(t.id); }); return E; }
 const segPorId = id => { for(const t of P.trans){ const s = t.segs.find(x => x.id === id); if(s) return s; } return null; };
 
 /* ══════════ NAVEGACIÓN ══════════ */
@@ -797,7 +821,7 @@ let step = 0, trabajando = false;
 const STEPS = ['Inicio','Estudio','Transcribir','Hablantes','Anonimizar','Analizar','Mixtos','Exportar'];
 function buildStepper(){ $('stepper').innerHTML = STEPS.map((s,i) => `${i ? `<span class="sline${i <= step ? ' on' : ''}"></span>` : ''}<button class="sdot" type="button" data-go="${i}" data-state="${i < step ? 'done' : i === step ? 'now' : ''}" ${i === step ? 'aria-current="step"' : ''}><span class="n">${i < step ? ico('check') : i === 0 ? ico('shield') : i}</span><span class="lbl">${s}</span></button>`).join(''); $$('#stepper [data-go]').forEach(b => b.onclick = () => { if(!trabajando) go(+b.dataset.go); }); }
 function go(i){ step = i; $$('.screen').forEach(s => s.classList.toggle('on', +s.dataset.step === i)); $('progBar').style.width = (i / 7 * 100) + '%'; ({1:pintaEstudio, 2:pintaFicheros, 3:pintaSegs, 4:pintaAnon, 5:pintaAnalisis, 6:pintaMixtos, 7:pintaExport}[i] || (() => {}))(); buildStepper(); updateNav(); window.scrollTo({top:0, behavior:'instant'}); }
-const NAV = [['Empezar','Prueba el <b>estudio de ejemplo</b>: no necesita clave.'],['Siguiente: transcribir','Los nombres reales nunca salen de este ordenador.'],['Siguiente: quién habla','La transcripción va al ritmo del audio.'],['Siguiente: anonimizar','Asigna cada turno: la app no reconoce voces.'],['Siguiente: analizar','Revisa la vista previa antes de seguir.'],['Siguiente: métodos mixtos','Antes de enviar verás exactamente qué sale.'],['Siguiente: exportar','Todo calculado en tu ordenador.'],['Volver al inicio','Guarda la clave de reidentificación aparte.']];
+const NAV = [['Empezar','Prueba el <b>estudio de ejemplo</b>: no necesita clave.'],['Siguiente: transcribir','Los nombres reales nunca salen de este ordenador.'],['Siguiente: quién habla','Transcribe en privado o importa una transcripción.'],['Siguiente: anonimizar','Asigna las voces y revisa los turnos en ámbar.'],['Siguiente: analizar','Revisa la vista previa antes de seguir.'],['Siguiente: métodos mixtos','Antes de enviar verás exactamente qué sale.'],['Siguiente: exportar','Todo calculado en tu ordenador.'],['Volver al inicio','Guarda la clave de reidentificación aparte.']];
 function updateNav(){ $('navBack').classList.toggle('hidden', step === 0); $('navNextTxt').textContent = NAV[step][0]; $('navHint').innerHTML = NAV[step][1]; $('navNext').disabled = trabajando; }
 $('navBack').onclick = () => { if(!trabajando && step > 0) go(step - 1); };
 $('navNext').onclick = () => { if(trabajando) return; if(step === 1 && !P.titulo.trim()){ $('eTitulo').focus(); return toast('Ponle un título al estudio'); } if(step === 3 && !P.trans.length) return toast('Primero transcribe o importa algún fichero'); if(step === 4) detectaTodo(false); go(step === 7 ? 0 : step + 1); };
@@ -821,22 +845,22 @@ $('addPart').onclick = () => { const n = Math.max(0, ...P.participantes.map(p =>
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 const IDIOMAS = [['es-ES','Español (España)'],['es-AR','Español (Argentina)'],['es-MX','Español (México)'],['es-US','Español (EE. UU.)'],['en-GB','Inglés (Reino Unido)'],['en-US','Inglés (EE. UU.)'],['ca-ES','Catalán / valenciano'],['gl-ES','Gallego'],['eu-ES','Euskera'],['pt-PT','Portugués (Portugal)'],['pt-BR','Portugués (Brasil)'],['fr-FR','Francés'],['it-IT','Italiano'],['de-DE','Alemán']];
 const localOK = () => !!(SR && 'processLocally' in SR.prototype && SR.available);
-function pintaSoporte(){ $('soporte').innerHTML = !SR ? `<div class="aviso"><b>Este navegador no tiene reconocimiento de voz.</b> Usa Google Chrome de escritorio actualizado. Mientras tanto puedes importar transcripciones ya hechas.</div>` : !localOK() ? `<div class="aviso"><b>Tu Chrome no permite exigir el reconocimiento local</b> (falta <code>processLocally</code>). Actualiza Chrome. La app no transcribirá en la nube: puedes importar transcripciones ya hechas.</div>` : `<div class="okbox">${ico('shield')}<span>Reconocimiento local disponible. Cada transcripción se hace con <code>processLocally = true</code>: si el idioma no está en tu equipo, Chrome no lo envía a ningún servidor; la app te ofrece descargar el paquete.</span></div>`; }
+function pintaSoporte(){ $('soporte').innerHTML = navigator.gpu ? `<div class="okbox">${ico('shield')}<span>Tu navegador permite usar la tarjeta gráfica (WebGPU): la transcripción local irá más rápida.</span></div>` : `<div class="aviso"><b>Sin WebGPU.</b> La transcripción local usará el procesador y será más lenta. Si va muy despacio, elige el modelo local «tiny» en los ajustes. Chrome o Edge de escritorio actualizados suelen tener WebGPU.</div>`; }
 async function disponibilidad(lang){ if(!localOK()) return 'unavailable'; try{ return await SR.available({langs:[lang], processLocally:true}); }catch(e){ return 'unavailable'; } }
 subidaMedia();
 function subidaMedia(){ const d = $('drop'); ['dragenter','dragover'].forEach(ev => d.addEventListener(ev, e => { e.preventDefault(); d.classList.add('over'); })); ['dragleave','drop'].forEach(ev => d.addEventListener(ev, e => { e.preventDefault(); d.classList.remove('over'); })); d.addEventListener('drop', e => anadeMedia([...e.dataTransfer.files])); d.onkeydown = e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('fileMedia').click(); } }; $('fileMedia').onchange = e => { anadeMedia([...e.target.files]); e.target.value = ''; }; }
-function anadeMedia(fs){ fs.filter(f => /^(audio|video)\//.test(f.type) || /\.(mp3|m4a|wav|ogg|oga|mp4|webm|mov|mkv|aac|flac)$/i.test(f.name)).forEach(f => { const ex = P.trans.find(t => t.fichero === f.name && !t.segs.length); const t = ex || {id:'T' + (P.trans.length + 1), nombre:f.name.replace(/\.[^.]+$/, ''), fichero:f.name, idioma:'es-ES', tipo:'entrevista', segs:[], dur:0}; if(!ex) P.trans.push(t); MEDIA[t.id] = f; }); guarda(); pintaFicheros(); }
+function anadeMedia(fs){ fs.filter(f => /^(audio|video)\//.test(f.type) || /\.(mp3|m4a|wav|ogg|oga|mp4|webm|mov|mkv|aac|flac)$/i.test(f.name)).forEach(f => { const ex = P.trans.find(t => t.fichero === f.name && !t.segs.length); const t = ex || {id:nuevoIdT(), nombre:f.name.replace(/\.[^.]+$/, ''), fichero:f.name, idioma:'es-ES', tipo:'entrevista', segs:[], dur:0}; if(!ex) P.trans.push(t); MEDIA[t.id] = f; }); guarda(); pintaFicheros(); }
 async function pintaFicheros(){
-  pintaSoporte();
-  $('ficheros').innerHTML = P.trans.map(t => `<div class="fich"><div class="h"><b>${esc(t.nombre)}</b><span class="help" style="margin:0">${t.segs.length ? t.segs.length + ' turnos' : 'sin transcribir'}${t.dur ? ' · ' + hms(t.dur) : ''}${MEDIA[t.id] ? '' : t.fichero ? ' · audio no vinculado en esta sesión' : ''}</span><button class="iconbtn" type="button" data-tx="${t.id}" aria-label="Quitar">${ico('trash')}</button></div>
-    <div class="actions" style="margin-top:8px"><select data-tl="${t.id}" style="padding:6px 8px;border:1.5px solid var(--linea);border-radius:8px">${IDIOMAS.map(([c,n]) => `<option value="${c}" ${t.idioma === c ? 'selected' : ''}>${n}</option>`).join('')}</select><select data-tt="${t.id}" style="padding:6px 8px;border:1.5px solid var(--linea);border-radius:8px"><option value="entrevista" ${t.tipo === 'entrevista' ? 'selected' : ''}>Entrevista</option><option value="grupo" ${t.tipo === 'grupo' ? 'selected' : ''}>Grupo focal</option></select><span class="disp" id="disp-${t.id}">…</span>${MEDIA[t.id] ? `<button class="btn btn-primary btn-sm" type="button" data-go-tr="${t.id}">${ico('play')}${t.segs.length ? 'Volver a transcribir' : 'Transcribir'}</button><label style="display:flex;gap:5px;font-size:13px;margin:0"><input type="checkbox" data-oir="${t.id}" checked> escuchar</label>` : `<label class="btn btn-ghost btn-sm" style="cursor:pointer">${ico('upload')}Vincular audio o vídeo<input type="file" accept="audio/*,video/*" data-vinc="${t.id}" hidden></label>`}</div>
-    <div id="prog-${t.id}" class="help" style="margin:6px 0 0"></div></div>`).join('') || '<p class="empty">Aún no hay ficheros.</p>';
+  pintaSoporte(); sincAjustes();
+  $('ficheros').innerHTML = P.trans.map((t, ix) => `<div class="fich"><div class="h"><b>${esc(t.nombre)}</b><span class="help" style="margin:0">${t.segs.length ? t.segs.length + ' turnos' : 'sin transcribir'}${t.dur ? ' · ' + hms(t.dur) : ''}${MEDIA[t.id] ? '' : t.fichero ? ' · audio no vinculado en esta sesión' : ''}</span><button class="iconbtn" type="button" data-tx="${ix}" aria-label="Quitar">${ico('trash')}</button></div>
+    <div class="actions" style="margin-top:8px"><select data-tl="${t.id}" style="padding:6px 8px;border:1.5px solid var(--linea);border-radius:8px">${IDIOMAS.map(([c,n]) => `<option value="${c}" ${t.idioma === c ? 'selected' : ''}>${n}</option>`).join('')}</select><select data-tt="${t.id}" style="padding:6px 8px;border:1.5px solid var(--linea);border-radius:8px"><option value="entrevista" ${t.tipo === 'entrevista' ? 'selected' : ''}>Entrevista</option><option value="grupo" ${t.tipo === 'grupo' ? 'selected' : ''}>Grupo focal</option></select>${MEDIA[t.id] ? `<button class="btn btn-primary btn-sm" type="button" data-go-pv="${t.id}">${ico('shield')}${t.segs.length ? 'Volver a transcribir en privado' : 'Transcribir en privado'}</button><button class="btn btn-ghost btn-sm" type="button" data-go-tr="${t.id}" title="Reconocimiento de Chrome: no envía nada, pero es lento y no separa voces">${ico('play')}Solo Chrome</button><label style="display:flex;gap:5px;font-size:13px;margin:0"><input type="checkbox" data-oir="${t.id}" checked> escuchar (Chrome)</label>` : `<label class="btn btn-ghost btn-sm" style="cursor:pointer">${ico('upload')}Vincular audio o vídeo<input type="file" accept="audio/*,video/*" data-vinc="${t.id}" hidden></label>`}</div>
+    ${resumenPriv(t)}<div id="prog-${t.id}" class="help" style="margin:6px 0 0"></div></div>`).join('') || '<p class="empty">Aún no hay ficheros.</p>';
   $$('#ficheros [data-tl]').forEach(s => s.onchange = () => { P.trans.find(t => t.id === s.dataset.tl).idioma = s.value; guarda(); pintaDisp(s.dataset.tl); });
   $$('#ficheros [data-tt]').forEach(s => s.onchange = () => { P.trans.find(t => t.id === s.dataset.tt).tipo = s.value; guarda(); });
-  $$('#ficheros [data-tx]').forEach(b => b.onclick = () => { if(!confirm('¿Quitar este fichero y su transcripción?')) return; P.trans = P.trans.filter(t => t.id !== b.dataset.tx); guarda(); pintaFicheros(); });
+  $$('#ficheros [data-tx]').forEach(b => b.onclick = () => { const ix = +b.dataset.tx, t = P.trans[ix]; if(!t) return; if(!confirm(`¿Quitar «${t.nombre}» y su transcripción? Los demás ficheros no se tocan.`)) return; if(transActiva && transActiva.id === t.id) transActiva.parar(); delete MEDIA[t.id]; P.trans.splice(ix, 1); guarda(); pintaFicheros(); });
   $$('#ficheros [data-vinc]').forEach(i => i.onchange = () => { if(i.files[0]){ MEDIA[i.dataset.vinc] = i.files[0]; pintaFicheros(); } });
   $$('#ficheros [data-go-tr]').forEach(b => b.onclick = () => transcribir(b.dataset.goTr));
-  P.trans.forEach(t => pintaDisp(t.id));
+  $$('#ficheros [data-go-pv]').forEach(b => b.onclick = () => transcribirPrivado(b.dataset.goPv));
 }
 async function pintaDisp(id){
   const t = P.trans.find(x => x.id === id), el = $('disp-' + id); if(!el) return;
@@ -858,7 +882,7 @@ async function transcribir(id){
   const oir = $$(`[data-oir="${id}"]`)[0]; if(!oir || oir.checked) src.connect(ctx.destination);
   const track = dest.stream.getAudioTracks()[0], rec = new SR(); rec.lang = t.idioma; rec.continuous = true; rec.interimResults = true; rec.processLocally = true;
   t.segs = []; t.dur = el.duration; let ini = 0, parar = false, n = 0; const prog = $('prog-' + id);
-  transActiva = {parar:() => { parar = true; el.pause(); try{ rec.stop(); }catch(e){} }};
+  transActiva = {id, parar:() => { parar = true; el.pause(); try{ rec.stop(); }catch(e){} }};
   prog.innerHTML = `<span class="spin"></span> Transcribiendo en tu ordenador… <button class="btn btn-ghost btn-sm" type="button" id="stopTr" style="padding:2px 10px">Detener</button> <span id="interim" style="font-style:italic"></span>`;
   $('stopTr').onclick = () => transActiva.parar();
   rec.onresult = e => { let interim = ''; for(let i = e.resultIndex; i < e.results.length; i++){ const r = e.results[i]; if(r.isFinal){ const txt = r[0].transcript.trim(); if(txt){ const ahora = el.currentTime; t.segs.push({id:`${t.id}-${++n}`, t0:ini, t1:ahora, h:'', texto:txt.charAt(0).toUpperCase() + txt.slice(1)}); ini = ahora; } } else interim += r[0].transcript; } const ii = $('interim'); if(ii) ii.textContent = `${hms(el.currentTime)} / ${hms(el.duration)} · ${t.segs.length} turnos · ${interim.slice(-80)}`; };
@@ -869,9 +893,18 @@ async function transcribir(id){
   await ctx.resume(); await el.play(); rec.start(track);
 }
 /* importar transcripciones existentes (incluidas las de MAXQDA) */
-$('fileTrans').onchange = async e => { for(const f of [...e.target.files]){ try{ let txt = /\.docx$/i.test(f.name) ? await (async () => { await cargaLib(['https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js']); return (await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value; })() : await f.text(); P.trans.push(parseTrans(txt, f.name)); }catch(err){ toast(f.name + ': ' + err.message); } } e.target.value = ''; guarda(); pintaFicheros(); toast('Transcripción importada. Revisa los hablantes en el paso 3.'); };
+$('fileTrans').onchange = async e => { for(const f of [...e.target.files]){ try{ let txt = /\.docx$/i.test(f.name) ? await (async () => { await cargaLib(['https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js'], 'el lector de Word (.docx). Guarda el Word como .txt e impórtalo así'); return (await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value; })() : await f.text(); P.trans.push(parseTrans(txt, f.name)); }catch(err){ toast(f.name + ': ' + err.message); } } e.target.value = ''; guarda(); pintaFicheros(); toast('Transcripción importada. Sigue en el paso 3: asigna las voces y revisa los turnos dudosos.', 6000); };
+/* sugerencias prudentes (no se aplican hasta que la investigadora pulsa «Aplicar»): la voz que más pregunta suele ser la moderadora;
+   si solo hay dos voces y un participante, la otra voz es ese participante */
+function sugiereVoces(t){
+  const V = t.voces || []; if(V.length < 2) return;
+  const tasa = v => v.pregunta / Math.max(1, v.turnos), ord = [...V].sort((a, b) => tasa(b) - tasa(a));
+  if(ord[0].pregunta >= 2 && tasa(ord[0]) > 2 * tasa(ord[1])) ord[0].sug = 'MOD';
+  const ps = P.participantes.filter(p => p.codigo);
+  if(V.length === 2 && ps.length === 1 && ord[0].sug === 'MOD') ord[1].sug = ps[0].codigo;
+}
 function parseTrans(txt, nombre){
-  const t = {id:'T' + (P.trans.length + 1), nombre:nombre.replace(/\.[^.]+$/, ''), fichero:'', idioma:'es-ES', tipo:'entrevista', segs:[], dur:0}; let n = 0, tt = 0;
+  const t = {id:nuevoIdT(), nombre:nombre.replace(/\.[^.]+$/, ''), fichero:'', idioma:'es-ES', tipo:'entrevista', segs:[], dur:0}; let n = 0, tt = 0;
   const aSeg = s => { const p = s.split(':').map(Number); return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p[0] * 60 + (p[1] || 0); };
   const lineas = txt.replace(/\r/g, '').split(/\n/), vtt = /-->/.test(txt);
   if(vtt){ for(let i = 0; i < lineas.length; i++){ const m = lineas[i].match(/(\d{1,2}:\d{2}:\d{2}|\d{1,2}:\d{2})[.,]\d+\s*-->\s*(\d{1,2}:\d{2}:\d{2}|\d{1,2}:\d{2})/); if(m){ let x = []; while(lineas[++i] && lineas[i].trim()) x.push(lineas[i].trim()); const s = x.join(' ').replace(/<v ([^>]+)>/, '$1: ').replace(/<[^>]+>/g, ''), h = s.match(/^([^:]{1,30}):\s+(.*)$/); t.segs.push({id:`${t.id}-${++n}`, t0:aSeg(m[1]), t1:aSeg(m[2]), h:h ? h[1].trim() : '', texto:h ? h[2] : s}); } } }
@@ -882,20 +915,499 @@ function parseTrans(txt, nombre){
   return t;
 }
 
+/* ══════════ TRANSCRIPCIÓN PRIVADA EN ESTE ORDENADOR ══════════
+   1) el audio se decodifica aquí · 2) Whisper local (WebGPU/CPU) da palabras con tiempos · 3) se separan las voces
+   4) se localizan los datos personales y se CORTAN del audio · 5) un trozo por turno, en orden aleatorio y con nombre aleatorio, va a OpenAI
+   6) se recompone el texto y se marcan los turnos dudosos. El audio completo y los nombres reales no salen del navegador. */
+const PV = (() => {
+const TJS = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.0';
+const PRECIOS = {'gpt-4o-mini-transcribe':0.003, 'gpt-4o-transcribe':0.006, 'whisper-1':0.006};   /* USD por minuto de audio */
+const WHISPER = {tiny:['onnx-community/whisper-tiny_timestamped', 'Xenova/whisper-tiny'], base:['onnx-community/whisper-base_timestamped', 'Xenova/whisper-base'], small:['onnx-community/whisper-small_timestamped', 'Xenova/whisper-small']};
+const NER_MODELO = 'Xenova/bert-base-multilingual-cased-ner-hrl', WAVLM = 'Xenova/wavlm-base-plus-sv';
+const LENGUA_WHISPER = {es:'spanish', en:'english', ca:'catalan', gl:'galician', eu:'basque', pt:'portuguese', fr:'french', it:'italian', de:'german'};
+const MARCA = '[REDACTADO]', FS = 16000;
+const CFG0 = {pausaTurno:0.8, maxTurno:30, margen:0.2, padding:0.15, minPieza:0.5, umbralLogprob:-0.6, simMin:0.55, concurrencia:4, bloqueS:300};
+const slp = ms => new Promise(r => setTimeout(r, ms)), r2 = x => Math.round(x * 100) / 100;
+
+/* ── texto ── */
+const normTokens = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]+/g, ' ').split(' ').filter(Boolean);
+const normText = s => normTokens(s).join(' ');
+function ratio(a, b){ const n = a.length, m = b.length; if(!n && !m) return 1; let prev = new Array(m + 1).fill(0); for(let i = 1; i <= n; i++){ const cur = [0]; for(let j = 1; j <= m; j++) cur[j] = a[i - 1] === b[j - 1] ? prev[j - 1] + 1 : Math.max(prev[j], cur[j - 1]); prev = cur; } return 2 * prev[m] / (n + m); }
+function ratioSeq(A, B){ const n = A.length, m = B.length; if(!n && !m) return 1; let prev = new Array(m + 1).fill(0); for(let i = 1; i <= n; i++){ const cur = [0]; for(let j = 1; j <= m; j++) cur[j] = A[i - 1] === B[j - 1] ? prev[j - 1] + 1 : Math.max(prev[j], cur[j - 1]); prev = cur; } return 2 * prev[m] / (n + m); }
+
+/* ── léxico de términos protegidos ── */
+const PARTICULAS = new Set(['de', 'del', 'la', 'las', 'los', 'el', 'y', 'van', 'von', 'da', 'di']);
+const STOP_ENT = new Set(['dios', 'navidad', 'semana santa', 'internet', 'whatsapp', 'google', 'seguridad social', 'sanidad', 'educacion', 'ley', 'dependencia', 'facebook', 'instagram', 'youtube', 'espana']);
+function construirLexico(t){
+  const lex = [];
+  for(const n of t.personas || []){ const k = normTokens(n); if(k.length) lex.push([k, 'persona']); }
+  for(const w of t.sueltos || []){ const k = normTokens(w); if(k.length === 1 && k[0].length > 2 && !PARTICULAS.has(k[0])) lex.push([k, 'persona']); }
+  for(const o of t.otros || []){ const k = normTokens(o.texto); if(k.length) lex.push([k, String(o.tipo || 'dato personal').toLowerCase()]); }
+  return ordenaLex(lex);
+}
+const ordenaLex = lex => lex.sort((a, b) => b[0].length - a[0].length);
+function tokIgual(a, b){ if(a === b) return true; if(Math.min(a.length, b.length) < 5) return false; return ratio(a, b) >= 0.84; }   /* «Giménez» ≈ «Jiménez» */
+function detectarLexico(palabras, lex){
+  const toks = palabras.map(p => normText(p.w)), hits = [];
+  for(let i = 0; i < toks.length; i++){
+    if(!toks[i]) continue;
+    for(const [ent, tipo] of lex){ const k = ent.length; if(i + k <= toks.length && ent.every((e, j) => tokIgual(toks[i + j], e))){ hits.push([i, i + k - 1, tipo]); break; } }
+  }
+  return hits;
+}
+/* ── patrones: correo, teléfono, DNI/NIE, IBAN, fechas ── */
+const MESES = 'enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre';
+const PATRONES = [
+  ['contacto', /[\w.+-]+@[\w-]+\.[\w.-]+/g], ['contacto', /(?<!\d)(?:\+?34[\s.-]?)?[6789]\d{2}[\s.-]?\d{3}[\s.-]?\d{3}(?!\d)/g], ['contacto', /(?<!\d)(?:\d[\s.-]?){9,}(?!\d)/g],
+  ['identificador', /\b(?:\d{8}\s?[A-HJ-NP-TV-Z]|[XYZ]\s?\d{7}\s?[A-Z])\b/gi], ['identificador', /\bES\d{2}(?:[\s-]?\d{4}){5}\b/gi],
+  ['fecha', /\b\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}\b/g], ['fecha', new RegExp('\\b\\d{1,2} de (?:' + MESES + ')(?: de \\d{4})?\\b', 'gi')]];
+const NUM_PAL = new Set('cero uno una dos tres cuatro cinco seis siete ocho nueve diez once doce trece catorce quince dieciseis diecisiete dieciocho diecinueve veinte treinta cuarenta cincuenta sesenta setenta ochenta noventa cien ciento'.split(' '));
+function textoOffsets(palabras){ const offs = []; let pos = 0; for(const p of palabras){ offs.push([pos, pos + p.w.length]); pos += p.w.length + 1; } return [palabras.map(p => p.w).join(' '), offs]; }
+const idxRango = (offs, a, b) => offs.map((o, i) => o[0] < b && o[1] > a ? i : -1).filter(i => i >= 0);
+function detectarPatrones(palabras){
+  const [texto, offs] = textoOffsets(palabras), hits = [];
+  for(const [tipo, rx] of PATRONES){ rx.lastIndex = 0; for(const m of texto.matchAll(rx)){ const ix = idxRango(offs, m.index, m.index + m[0].length); if(ix.length) hits.push([ix[0], ix[ix.length - 1], tipo]); } }
+  return hits;
+}
+function detectarNumeros(palabras, minimo = 6){
+  const esNum = w => /^\d+$/.test(normText(w).replace(/ /g, '')) || NUM_PAL.has(normText(w)), hits = []; let i = 0;
+  while(i < palabras.length){ let j = i; while(j < palabras.length && esNum(palabras[j].w)) j++; if(j - i >= minimo) hits.push([i, j - 1, 'contacto']); i = Math.max(j, i + 1); }
+  return hits;
+}
+const detectarTodo = (palabras, lex) => [...detectarLexico(palabras, lex), ...detectarPatrones(palabras), ...detectarNumeros(palabras)];
+function intervalosRedaccion(palabras, hits, pad, hueco = 0.35){
+  const iv = hits.map(([i, j, t]) => [Math.max(0, palabras[i].t0 - pad), palabras[j].t1 + pad, t]).sort((a, b) => a[0] - b[0] || a[1] - b[1]), out = [];
+  for(const [a, b, t] of iv){ const u = out[out.length - 1]; if(u && a <= u.t1 + hueco){ u.t1 = Math.max(u.t1, b); u.tipos.add(t); } else out.push({t0:a, t1:b, tipos:new Set([t])}); }
+  return out.map(o => ({t0:o.t0, t1:o.t1, tipos:[...o.tipos].sort()}));
+}
+/* Entidades de un modelo NER (PER/LOC/ORG): une los subtrozos «##» y las convierte en términos del léxico */
+function entidadesDeNER(toks, minScore = 0.6){
+  const out = []; let cur = null;
+  const cierra = () => { if(cur){ const txt = cur.txt.trim(), n = normText(txt); if(n && n.length > 2 && !STOP_ENT.has(n)) out.push([normTokens(txt), {PER:'persona', LOC:'lugar', ORG:'centro'}[cur.tipo]]); cur = null; } };
+  for(const x of toks){
+    const tipo = String(x.entity || x.entity_group || '').replace(/^[BIES]-/, ''), ini = /^B-/.test(x.entity || ''), w = String(x.word || '');
+    if(!['PER', 'LOC', 'ORG'].includes(tipo) || (x.score ?? 1) < minScore){ cierra(); continue; }
+    if(cur && cur.tipo === tipo && !ini){ cur.txt += w.startsWith('##') ? w.slice(2) : ' ' + w; } else { cierra(); cur = {tipo, txt:w.replace(/^##/, '')}; }
+  }
+  cierra(); return out;
+}
+
+/* ── voces: candidatos por pausas, vectores de voz y agrupamiento ── */
+/* ventanas deslizantes sobre el habla: detectan cambios de voz aunque no haya pausa entre quienes hablan */
+function ventanasVoz(palabras, win, hop){
+  const out = []; if(!palabras.length) return out;
+  const ini = palabras[0].t0, fin = palabras[palabras.length - 1].t1; let j = 0;
+  for(let a = ini; a < fin; a += hop){
+    const b = Math.min(a + win, fin); if(b - a < 0.8) continue;
+    while(j < palabras.length && palabras[j].t1 < a) j++;
+    let hab = 0; for(let k = j; k < palabras.length && palabras[k].t0 < b; k++){ const o = Math.min(b, palabras[k].t1) - Math.max(a, palabras[k].t0); if(o > 0) hab += o; }
+    if(hab >= 0.4 * (b - a)) out.push({t0:a, t1:b});
+  }
+  return out;
+}
+const dot = (a, b) => { let s = 0; for(let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; };
+function unit(v){ let s = 0; for(let i = 0; i < v.length; i++) s += v[i] * v[i]; s = Math.sqrt(s) || 1; for(let i = 0; i < v.length; i++) v[i] /= s; return v; }
+function mulberry32(a){ return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function normalizaEmb(E, tipo){
+  const n = E.length, d = E[0].length, mu = new Float32Array(d), sd = new Float32Array(d).fill(1);
+  for(const e of E) for(let j = 0; j < d; j++) mu[j] += e[j] / n;
+  if(tipo === 'mfcc'){ sd.fill(0); for(const e of E) for(let j = 0; j < d; j++) sd[j] += (e[j] - mu[j]) ** 2 / n; for(let j = 0; j < d; j++) sd[j] = Math.sqrt(sd[j]) || 1; }
+  return E.map(e => { const v = new Float32Array(d); for(let j = 0; j < d; j++){ v[j] = (e[j] - mu[j]) / sd[j]; if(tipo === 'mfcc' && j >= d - 2) v[j] *= 2.5; } return unit(v); });   /* el tono (F0) pesa más */
+}
+function kmeansCos(X, K, semilla = 12345){
+  const n = X.length, d = X[0].length, rnd = mulberry32(semilla); K = Math.min(K, n); let mejor = null;
+  for(let r = 0; r < 10; r++){
+    const C = [Float32Array.from(X[Math.floor(rnd() * n)])];
+    while(C.length < K){ const dist = X.map(x => Math.min(...C.map(c => 1 - dot(x, c)))), s = dist.reduce((a, b) => a + b, 0); let u = rnd() * s, i = 0; for(; i < n - 1; i++){ u -= dist[i]; if(u <= 0) break; } C.push(Float32Array.from(X[i])); }
+    const lab = new Int32Array(n).fill(-1);
+    for(let it = 0; it < 40; it++){
+      let cambio = false;
+      for(let i = 0; i < n; i++){ let b = 0, bs = -9; for(let k = 0; k < K; k++){ const s = dot(X[i], C[k]); if(s > bs){ bs = s; b = k; } } if(lab[i] !== b){ lab[i] = b; cambio = true; } }
+      for(let k = 0; k < K; k++){ const acc = new Float32Array(d); let c = 0; for(let i = 0; i < n; i++) if(lab[i] === k){ for(let j = 0; j < d; j++) acc[j] += X[i][j]; c++; } if(c) C[k] = unit(acc); }
+      if(!cambio) break;
+    }
+    let score = 0; for(let i = 0; i < n; i++) score += dot(X[i], C[lab[i]]);
+    if(!mejor || score > mejor.score) mejor = {lab, C, score};
+  }
+  return mejor;
+}
+const letraVoz = n => n < 26 ? String.fromCharCode(65 + n) : 'V' + (n + 1);
+/* pone p.voz = 'A', 'B'… (por orden de aparición) y p.vd (voz poco clara) en cada palabra */
+function asignarVoces(palabras, wins, embs, K, tipo){
+  const idx = embs.map((e, i) => e ? i : -1).filter(i => i >= 0), sinVoces = () => { palabras.forEach(p => { p.voz = ''; p.vd = false; }); return {orden:{}, sim:null}; };
+  if(K < 2 || idx.length < 2) return sinVoces();
+  const X = normalizaEmb(idx.map(i => embs[i]), tipo), km = kmeansCos(X, K), lab = new Array(wins.length).fill(-1), vd = new Array(wins.length).fill(false);
+  idx.forEach((wi, q) => { lab[wi] = km.lab[q]; const s = km.C.map(c => dot(X[q], c)).sort((a, b) => b - a); vd[wi] = s[0] - s[1] < 0.05; });
+  /* cada palabra toma la voz de la ventana válida más centrada sobre ella */
+  const L = new Array(palabras.length).fill(-1), V = new Array(palabras.length).fill(false); let q = 0;
+  palabras.forEach((p, n) => {
+    const c = (p.t0 + p.t1) / 2; while(q < wins.length && wins[q].t1 < c) q++;
+    let mejor = -1, md = Infinity; for(let k = q; k < wins.length && wins[k].t0 <= c; k++){ if(lab[k] < 0) continue; const d = Math.abs((wins[k].t0 + wins[k].t1) / 2 - c); if(d < md){ md = d; mejor = k; } }
+    if(mejor < 0){ for(let k = Math.max(0, q - 4); k < Math.min(wins.length, q + 4); k++){ if(lab[k] < 0) continue; const d = Math.min(Math.abs(wins[k].t0 - c), Math.abs(wins[k].t1 - c)); if(d < md && d < 1.5){ md = d; mejor = k; } } }
+    if(mejor >= 0){ L[n] = lab[mejor]; V[n] = vd[mejor]; }
+  });
+  let prev = -1; for(let n = 0; n < L.length; n++){ if(L[n] < 0) L[n] = prev; else prev = L[n]; }
+  let sig = -1; for(let n = L.length - 1; n >= 0; n--){ if(L[n] < 0) L[n] = sig; else sig = L[n]; }
+  /* suavizado: mediana de 5 palabras y fuera tramos de menos de 3 palabras */
+  const M = L.map((_, n) => { const c = {}; for(let k = Math.max(0, n - 2); k <= Math.min(L.length - 1, n + 2); k++) c[L[k]] = (c[L[k]] || 0) + 1; return +Object.keys(c).sort((a, b) => c[b] - c[a] || (+a === L[n] ? -1 : 1))[0]; });
+  for(let pasada = 0; pasada < 3; pasada++){
+    let n = 0; while(n < M.length){ let e = n; while(e + 1 < M.length && M[e + 1] === M[n]) e++; if(e - n + 1 < 3 && (n > 0 || e < M.length - 1)){ const nv = n > 0 ? M[n - 1] : M[e + 1]; for(let k = n; k <= e; k++) M[k] = nv; } n = e + 1; }
+  }
+  const orden = {}; M.forEach(l => { if(l >= 0 && !(l in orden)) orden[l] = letraVoz(Object.keys(orden).length); });
+  palabras.forEach((p, n) => { p.voz = M[n] >= 0 ? orden[M[n]] : ''; p.vd = V[n]; });
+  let sim = -1; for(let a = 0; a < km.C.length; a++) for(let b = a + 1; b < km.C.length; b++) sim = Math.max(sim, dot(km.C[a], km.C[b]));
+  return {orden, sim, coh:Math.round(km.score / X.length * 100) / 100};   /* coh: cuánto se parece cada ventana a su voz; bajo = voces mal definidas */
+}
+
+/* ── vectores de voz «rápidos» (sin descargar nada): MFCC + tono ── */
+let _mel = null;
+function fft(re, im){
+  const n = re.length;
+  for(let i = 1, j = 0; i < n; i++){ let bit = n >> 1; for(; j & bit; bit >>= 1) j ^= bit; j ^= bit; if(i < j){ [re[i], re[j]] = [re[j], re[i]]; [im[i], im[j]] = [im[j], im[i]]; } }
+  for(let len = 2; len <= n; len <<= 1){
+    const ang = -2 * Math.PI / len, wr = Math.cos(ang), wi = Math.sin(ang);
+    for(let i = 0; i < n; i += len){ let cr = 1, ci = 0; for(let k = 0; k < len / 2; k++){ const a = i + k, b = a + len / 2, tr = re[b] * cr - im[b] * ci, ti = re[b] * ci + im[b] * cr; re[b] = re[a] - tr; im[b] = im[a] - ti; re[a] += tr; im[a] += ti; const nr = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = nr; } }
+  }
+}
+function inicMel(){
+  if(_mel) return _mel; const NFFT = 512, NM = 20, hz2m = h => 2595 * Math.log10(1 + h / 700), m2hz = m => 700 * (10 ** (m / 2595) - 1);
+  const lo = hz2m(80), hi = hz2m(5000), pts = Array.from({length:NM + 2}, (_, i) => Math.floor((NFFT + 1) * m2hz(lo + (hi - lo) * i / (NM + 1)) / FS)), fb = [];
+  for(let m = 1; m <= NM; m++){ const f = new Float32Array(NFFT / 2 + 1); for(let k = pts[m - 1]; k < pts[m]; k++) f[k] = (k - pts[m - 1]) / Math.max(1, pts[m] - pts[m - 1]); for(let k = pts[m]; k < pts[m + 1]; k++) f[k] = (pts[m + 1] - k) / Math.max(1, pts[m + 1] - pts[m]); fb.push(f); }
+  const hann = Float32Array.from({length:400}, (_, i) => 0.5 - 0.5 * Math.cos(2 * Math.PI * i / 399));
+  const dct = Array.from({length:12}, (_, k) => Float32Array.from({length:NM}, (_, j) => Math.cos(Math.PI * (k + 1) * (j + 0.5) / NM)));
+  return _mel = {NFFT, NM, fb, hann, dct};
+}
+function rasgosMFCC(x){
+  const {NFFT, NM, fb, hann, dct} = inicMel(), N = 400, H = 320; if(x.length < N * 3) return null;
+  const re = new Float32Array(NFFT), im = new Float32Array(NFFT), F = [], E = [];
+  for(let s = 0; s + N <= x.length; s += H){
+    re.fill(0); im.fill(0); let en = 0; for(let i = 0; i < N; i++){ const v = x[s + i] * hann[i]; re[i] = v; en += v * v; }
+    fft(re, im); const le = new Float32Array(NM);
+    for(let m = 0; m < NM; m++){ let a = 0; const f = fb[m]; for(let k = 0; k <= NFFT / 2; k++) if(f[k]) a += f[k] * (re[k] * re[k] + im[k] * im[k]); le[m] = Math.log(a + 1e-9); }
+    F.push(dct.map(r => { let a = 0; for(let j = 0; j < NM; j++) a += r[j] * le[j]; return a; })); E.push(en);
+  }
+  const med = [...E].sort((a, b) => a - b)[Math.floor(E.length * 0.4)], sel = F.filter((_, i) => E[i] >= med && E[i] > 1e-7); if(sel.length < 5) return null;
+  const out = new Float32Array(26), nS = sel.length;
+  for(let k = 0; k < 12; k++){ let m = 0; for(const f of sel) m += f[k] / nS; let v = 0; for(const f of sel) v += (f[k] - m) ** 2 / nS; out[k] = m; out[12 + k] = Math.sqrt(v); }
+  /* tono: autocorrelación a 8 kHz, tramas de 40 ms cada 40 ms */
+  const y = new Float32Array(x.length >> 1); for(let i = 0; i < y.length; i++) y[i] = (x[2 * i] + x[2 * i + 1]) / 2;
+  const f0 = []; for(let s = 0; s + 320 <= y.length; s += 320){
+    let r0 = 0; for(let i = 0; i < 320; i++) r0 += y[s + i] * y[s + i]; if(r0 < 1e-4) continue;
+    let best = 0, bl = 0; for(let l = 20; l <= 133; l++){ let a = 0; for(let i = 0; i + l < 320; i++) a += y[s + i] * y[s + i + l]; if(a / r0 > best){ best = a / r0; bl = l; } }
+    if(best > 0.4 && bl) f0.push(Math.log(8000 / bl));
+  }
+  if(f0.length >= 3){ f0.sort((a, b) => a - b); out[24] = f0[f0.length >> 1]; const m = f0.reduce((a, b) => a + b, 0) / f0.length; out[25] = Math.sqrt(f0.reduce((a, b) => a + (b - m) ** 2, 0) / f0.length); }
+  return out;
+}
+
+/* ── turnos y trozos de audio ── */
+function trocear(t, maxS){
+  const out = []; let ps = t.palabras;
+  while(ps.length >= 2 && ps[ps.length - 1].t1 - ps[0].t0 > maxS){
+    const ini = ps[0].t0; let mejor = null, mv = -1;
+    for(let k = 1; k < ps.length; k++){ const dur = ps[k - 1].t1 - ini; if(dur < 0.4 * maxS) continue; if(dur > maxS) break; const val = (ps[k].t0 - ps[k - 1].t1) + (/[.?!…]$/.test(ps[k - 1].w) ? 0.5 : 0); if(val >= mv){ mejor = k; mv = val; } }
+    if(mejor === null){ mejor = 1; for(let k = 1; k < ps.length; k++){ if(ps[k - 1].t1 - ini > maxS){ mejor = k; break; } mejor = k; } }
+    mejor = Math.min(Math.max(1, mejor), ps.length - 1);
+    out.push({voz:t.voz, palabras:ps.slice(0, mejor)}); ps = ps.slice(mejor);
+  }
+  out.push({voz:t.voz, palabras:ps}); return out;
+}
+function construirTurnos(palabras, pausa, maxS){
+  const turnos = []; let cur = null;
+  for(const p of palabras){
+    if(cur && ((p.voz || '') !== cur.voz || p.t0 - cur.palabras[cur.palabras.length - 1].t1 > pausa)){ turnos.push(cur); cur = null; }
+    if(!cur) cur = {voz:p.voz || '', palabras:[]};
+    cur.palabras.push(p);
+  }
+  if(cur) turnos.push(cur);
+  const out = turnos.flatMap(t => trocear(t, maxS));
+  out.forEach(t => { t.t0 = t.palabras[0].t0; t.t1 = t.palabras[t.palabras.length - 1].t1; t.vd = t.voz !== '' && t.palabras.filter(p => p.vd).length / t.palabras.length >= 0.3; }); return out;
+}
+function planificarPartes(turno, redac){
+  const a = turno.t0, b = turno.t1, partes = []; let cursor = a;
+  for(const r of redac.filter(r => r.t1 > a && r.t0 < b)){
+    if(r.t0 > cursor) partes.push({tipo:'audio', t0:cursor, t1:Math.min(r.t0, b)});
+    const u = partes[partes.length - 1];
+    if(!u || u.tipo !== 'marca') partes.push({tipo:'marca', tipos:[...r.tipos]}); else u.tipos = [...new Set([...u.tipos, ...r.tipos])].sort();
+    cursor = Math.max(cursor, Math.min(r.t1, b));
+  }
+  if(cursor < b) partes.push({tipo:'audio', t0:cursor, t1:b});
+  turno.partes = partes; return partes;
+}
+function extender(parte, turno, vec, redac, margen){
+  const x = parte.t0, y = parte.t1; let xe = x, ye = y;
+  if(x === turno.t0) xe = vec[0] !== null ? Math.max(x - margen, (vec[0] + x) / 2) : Math.max(0, x - margen);
+  if(y === turno.t1) ye = vec[1] !== null ? Math.min(y + margen, (y + vec[1]) / 2) : y + margen;
+  for(const r of redac){ if(r.t1 <= x + 1e-6) xe = Math.max(xe, r.t1); if(r.t0 >= y - 1e-6) ye = Math.min(ye, r.t0); }
+  return [Math.max(0, xe), ye];
+}
+const palabrasDe = (parte, palabras) => palabras.filter(p => p.t0 >= parte.t0 - 0.05 && p.t1 <= parte.t1 + 0.05);
+
+/* ── control de calidad: qué turnos conviene revisar ── */
+function hayRepeticion(tk){
+  let run = 1; for(let i = 1; i < tk.length; i++){ run = tk[i] === tk[i - 1] ? run + 1 : 1; if(run >= 5) return true; }
+  for(const n of [2, 3, 4]) for(let i = 0; i + 3 * n <= tk.length; i++){ const g = tk.slice(i, i + n).join(' '); if(tk.slice(i + n, i + 2 * n).join(' ') === g && tk.slice(i + 2 * n, i + 3 * n).join(' ') === g) return true; }
+  return false;
+}
+function evaluarDudas(apiTxt, localTxt, dur, logprob, conMarca, sinOpenai, vozDudosa, cfg = CFG0){
+  const m = [], a = normTokens(apiTxt), b = normTokens(localTxt);
+  if(sinOpenai) m.push('no se pudo transcribir con OpenAI: texto de la transcripción local');
+  if(logprob !== null && logprob !== undefined && logprob < cfg.umbralLogprob) m.push(`confianza baja del modelo (${logprob.toFixed(2)})`);
+  if(!sinOpenai && a.length >= 4 && b.length >= 4){ const sim = ratioSeq(a, b); if(sim < cfg.simMin) m.push(`difiere mucho de la transcripción local (parecido ${sim.toFixed(2)})`); }
+  if(dur >= 2 && a.length){ const rit = a.length / dur; if(rit > 6.5) m.push(`demasiadas palabras para su duración (${rit.toFixed(1)}/s)`); else if(dur >= 5 && rit < 0.4) m.push('muy pocas palabras para su duración: puede faltar texto'); }
+  if(hayRepeticion(a)) m.push('repeticiones sospechosas (posible invención)');
+  if(/\[inaudible\]/i.test(apiTxt)) m.push('contiene [inaudible]');
+  if(conMarca) m.push('zona cortada por privacidad: escucha el original y completa');
+  if(vozDudosa) m.push('voz poco clara: comprueba quién habla');
+  return m;
+}
+function recomponer(turnos, palabras, cfg = CFG0){
+  const segs = [], resumen = {};
+  for(const t of turnos){
+    const textos = [], locales = [], lp = []; let sinOpenai = false, corto = false;
+    for(const p of t.partes){
+      if(p.tipo === 'marca'){ if(!textos.length || textos[textos.length - 1] !== MARCA) textos.push(MARCA); continue; }
+      const loc = palabrasDe(p, palabras).map(w => w.w).join(' '); locales.push(loc);
+      let tx = p.texto; if(tx === undefined || tx === null){ tx = loc; if(p.corta) corto = true; else sinOpenai = true; } else if(p.logprob !== null && p.logprob !== undefined) lp.push(p.logprob);
+      if(String(tx).trim()) textos.push(String(tx).trim());
+    }
+    const texto = textos.join(' ').replace(/\s+/g, ' ').trim(); if(!texto) continue;
+    const conMarca = t.partes.some(p => p.tipo === 'marca'), apiSin = texto.split(MARCA).join(' ');
+    const motivos = evaluarDudas(apiSin, locales.join(' '), t.t1 - t.t0, lp.length ? lp.reduce((a, b) => a + b, 0) / lp.length : null, conMarca, sinOpenai, t.vd, cfg);
+    if(corto) motivos.push('trozo muy corto junto a una zona cortada: texto de la transcripción local');
+    if(t.partes.some(p => p.fuga)) motivos.push('OpenAI devolvió un nombre protegido (se ha ocultado): el audio enviado lo contenía');
+    segs.push({t0:r2(t.t0), t1:r2(t.t1), speaker:t.voz, text:texto, doubtful:motivos.length > 0, reasons:motivos});
+    if(t.voz){ const o = resumen[t.voz] = resumen[t.voz] || {id:t.voz, turns:0, seconds:0}; o.turns++; o.seconds = r2(o.seconds + t.t1 - t.t0); }
+  }
+  return {segs, voces:Object.values(resumen).sort((a, b) => a.id < b.id ? -1 : 1)};
+}
+
+/* ── audio: decodificar, cortar, codificar ── */
+async function decodificar(file){
+  const ab = await file.arrayBuffer(); let ac;
+  try{ ac = new AudioContext({sampleRate:FS}); }catch(e){ ac = new AudioContext(); }
+  let buf; try{ buf = await ac.decodeAudioData(ab); }catch(e){ ac.close(); throw new Error('El navegador no puede leer este audio. Prueba a convertirlo a mp3 o wav.'); }
+  ac.close(); const n = buf.length, ch = buf.numberOfChannels, mono = new Float32Array(n);
+  for(let c = 0; c < ch; c++){ const d = buf.getChannelData(c); for(let i = 0; i < n; i++) mono[i] += d[i] / ch; }
+  if(buf.sampleRate === FS) return mono;
+  const off = new OfflineAudioContext(1, Math.ceil(n * FS / buf.sampleRate), FS), b2 = off.createBuffer(1, n, buf.sampleRate); b2.copyToChannel(mono, 0);
+  const s = off.createBufferSource(); s.buffer = b2; s.connect(off.destination); s.start(); return (await off.startRendering()).getChannelData(0).slice();
+}
+function wavBlob(f32){
+  const n = f32.length, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf), s = (o, t) => { for(let i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
+  s(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); s(8, 'WAVE'); s(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, FS, true); v.setUint32(28, FS * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); s(36, 'data'); v.setUint32(40, n * 2, true);
+  for(let i = 0; i < n; i++){ const x = Math.max(-1, Math.min(1, f32[i])); v.setInt16(44 + i * 2, x < 0 ? x * 0x8000 : x * 0x7fff, true); }
+  return new Blob([buf], {type:'audio/wav'});
+}
+const trozo = (audio, a, b) => audio.subarray(Math.max(0, Math.floor(a * FS)), Math.min(audio.length, Math.ceil(b * FS)));
+const hex = () => { const u = new Uint8Array(16); crypto.getRandomValues(u); return [...u].map(x => x.toString(16).padStart(2, '0')).join(''); };
+function baraja(a){ const u = new Uint32Array(a.length); crypto.getRandomValues(u); return a.map((x, i) => [u[i], x]).sort((p, q) => p[0] - q[0]).map(p => p[1]); }
+function puntoCorte(audio, objetivo){   /* el punto más silencioso cerca del objetivo (±8 s), para no partir palabras */
+  const a = Math.max(0, Math.floor((objetivo - 8) * FS)), b = Math.min(audio.length, Math.floor((objetivo + 8) * FS)), W = 800; let mejor = Math.floor(objetivo * FS), me = Infinity;
+  for(let s = a; s + W <= b; s += W){ let e = 0; for(let i = 0; i < W; i++) e += audio[s + i] * audio[s + i]; if(e < me){ me = e; mejor = s + (W >> 1); } }
+  return mejor / FS;
+}
+
+/* ── motores (sustituibles en las pruebas) ── */
+let _T = null, _asr = null, _emb = null, _ner = null;
+async function cargaTJS(){ if(_T) return _T; try{ _T = await import(TJS); }catch(e){ throw new Error('No se pudo cargar el motor local desde jsDelivr. Comprueba la conexión (solo hace falta la primera vez).'); } _T.env.allowLocalModels = false; return _T; }
+const motores = {
+  async preparar(){},
+  async asr(audio, cfg, ctl){
+    if(!_asr || _asr.k !== cfg.whisper + cfg.disp){
+      const T = await cargaTJS(), gpu = cfg.disp !== 'cpu' && !!navigator.gpu;
+      const modos = (gpu ? [{device:'webgpu', dtype:{encoder_model:'fp32', decoder_model_merged:'q4'}}, {device:'webgpu', dtype:'fp32'}] : []).concat([{device:'wasm', dtype:'q8'}, {device:'wasm', dtype:'fp32'}]);
+      let err = null, pipe = null, modo = null;
+      for(const id of WHISPER[cfg.whisper] || WHISPER.base){ for(const m of modos){ try{ ctl.estado(`Cargando Whisper (${cfg.whisper}) en ${m.device === 'webgpu' ? 'la tarjeta gráfica' : 'la CPU'}…`, 0.05); pipe = await T.pipeline('automatic-speech-recognition', id, {...m, progress_callback:ctl.descarga}); modo = m.device; break; }catch(e){ err = e; } } if(pipe) break; }
+      if(!pipe) throw new Error('No se pudo cargar Whisper: ' + (err && err.message || err));
+      _asr = {k:cfg.whisper + cfg.disp, pipe, modo};
+    }
+    const dur = audio.length / FS, palabras = []; let ini = 0;
+    while(ini < dur - 0.05){
+      if(ctl.parar) throw new Error('detenido');
+      const fin = dur - ini <= cfg.bloqueS * 1.3 ? dur : puntoCorte(audio, ini + cfg.bloqueS), t0 = Date.now();
+      const out = await _asr.pipe(trozo(audio, ini, fin), {language:LENGUA_WHISPER[cfg.lang] || null, task:'transcribe', return_timestamps:'word', chunk_length_s:30, stride_length_s:5});
+      for(const c of out.chunks || []){ const w = String(c.text || '').trim(), a = c.timestamp && c.timestamp[0]; if(!w || a === null || a === undefined) continue; const b = c.timestamp[1] ?? a + 0.3; palabras.push({w, t0:ini + a, t1:ini + Math.max(b, a + 0.05)}); }
+      const hecho = fin / dur, vel = (fin - ini) / Math.max(0.1, (Date.now() - t0) / 1000);
+      ctl.estado(`Transcripción local con tiempos (${_asr.modo === 'webgpu' ? 'GPU' : 'CPU'}): ${hms(fin)} de ${hms(dur)} · ${vel.toFixed(1)}× la velocidad del audio`, 0.08 + 0.42 * hecho);
+      ini = fin;
+    }
+    return palabras;
+  },
+  async ner(palabras, ctl){
+    if(!_ner){ const T = await cargaTJS(); ctl.estado('Cargando el detector de nombres…', 0.5); _ner = await T.pipeline('token-classification', NER_MODELO, {progress_callback:ctl.descarga}); }
+    const ts = [], ventanas = []; let cur = '';
+    for(const p of palabras){ if(cur.length + p.w.length > 350){ ventanas.push(cur); cur = ''; } cur += (cur ? ' ' : '') + p.w; } if(cur) ventanas.push(cur);
+    const ents = [];
+    for(let i = 0; i < ventanas.length; i++){ if(ctl.parar) throw new Error('detenido'); const r = await _ner(ventanas[i]); ents.push(...entidadesDeNER(r)); if(i % 10 === 0){ ctl.estado(`Buscando nombres y lugares: ${i + 1}/${ventanas.length}`, 0.52 + 0.06 * i / ventanas.length); await slp(0); } }
+    return ents;
+  },
+  async embed(tipo, x, ctl){
+    if(tipo === 'preciso'){
+      if(!_emb){ const T = await cargaTJS(); ctl.estado('Cargando el modelo de voces…', 0.6); const dev = navigator.gpu ? 'webgpu' : 'wasm'; _emb = {proc:await T.AutoProcessor.from_pretrained(WAVLM, {progress_callback:ctl.descarga}), model:await T.AutoModel.from_pretrained(WAVLM, {device:dev, progress_callback:ctl.descarga})}; }
+      const o = await _emb.model(await _emb.proc(x)); return Float32Array.from(o.embeddings.data);
+    }
+    return rasgosMFCC(x);
+  }
+};
+
+/* ── ajustes ── */
+const LS = (k, d) => localStorage.getItem(k) ?? d;
+function leeCfg(idioma, nPart){
+  const nv = parseInt(LS('pv_nvoces', ''), 10);
+  return {...CFG0, modelo:LS('cualitativia_tmodel', 'gpt-4o-mini-transcribe'), whisper:LS('pv_whisper', 'base'), voces:LS('pv_voces', 'rapido'), nVoces:nv >= 1 ? nv : Math.min(6, Math.max(2, nPart + 1)),
+    ner:LS('pv_ner', '1') === '1', disp:LS('pv_disp', 'auto'), lang:String(idioma || 'es-ES').split('-')[0].toLowerCase(),
+    prompt:'Conversación grabada en una entrevista. Transcripción literal con puntuación.', logprobs:true};
+}
+const hms = s => { s = Math.max(0, Math.round(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+
+/* ── envío a OpenAI ── */
+async function enviarPieza(pz, cfg, key, ctl){
+  for(let k = 0; k < 5; k++){
+    if(ctl.parar) throw new Error('detenido');
+    const fd = new FormData(); fd.append('file', wavBlob(pz.audio), pz.rid + '.wav'); fd.append('model', cfg.modelo); fd.append('language', cfg.lang); fd.append('temperature', '0'); fd.append('response_format', 'json');
+    if(cfg.prompt) fd.append('prompt', cfg.prompt); if(cfg.logprobs && /^gpt-4o/.test(cfg.modelo)) fd.append('include[]', 'logprobs');
+    let r; try{ r = await fetch('https://api.openai.com/v1/audio/transcriptions', {method:'POST', headers:{Authorization:'Bearer ' + key}, body:fd}); }catch(e){ await slp(Math.min(20000, 1000 * 2 ** k)); continue; }
+    if(r.ok){ const j = await r.json(); pz.texto = String(j.text || '').trim(); const v = (j.logprobs || []).map(x => x.logprob).filter(x => typeof x === 'number'); pz.logprob = v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; return true; }
+    const t = await r.text();
+    if(r.status === 401) throw new Error('OpenAI no reconoce tu clave.');
+    if(r.status === 429 && /quota|billing/i.test(t)) throw new Error('Tu cuenta de OpenAI no tiene saldo.');
+    if(r.status === 400 && cfg.logprobs && /include|logprob/i.test(t)){ cfg.logprobs = false; continue; }
+    if(r.status === 429 || r.status >= 500){ await slp(Math.min(30000, 1500 * 2 ** k)); continue; }
+    throw new Error(`OpenAI ${r.status}: ${t.slice(0, 160)}`);
+  }
+  pz.texto = null; pz.error = true; return false;
+}
+async function enviar(piezas, cfg, key, ctl){
+  const cola = baraja(piezas); let hechas = 0, ok = 0, i = 0; const t0 = Date.now();
+  async function trabajador(){ while(i < cola.length){ const pz = cola[i++]; if(await enviarPieza(pz, cfg, key, ctl)) ok++; hechas++; ctl.estado(`Enviando a OpenAI trozos sin nombres, en orden aleatorio: ${hechas}/${cola.length}`, 0.7 + 0.28 * hechas / cola.length); } }
+  await Promise.all(Array.from({length:Math.min(cfg.concurrencia, cola.length)}, trabajador)); return ok;
+}
+
+/* ── proceso completo ── */
+async function procesar(file, cfg, terminos, key, ctl){
+  const t0 = Date.now(); ctl.estado('Leyendo el audio en tu ordenador…', 0.02);
+  const audio = await decodificar(file), dur = audio.length / FS; if(dur < 1) throw new Error('El audio es demasiado corto.');
+  await motores.preparar(cfg, ctl);
+  const palabras = await motores.asr(audio, cfg, ctl); if(palabras.length < 3) throw new Error('No se ha detectado habla en el audio.');
+  const lexU = construirLexico(terminos); let lex = lexU;
+  if(cfg.ner){ try{ lex = ordenaLex([...lexU, ...(await motores.ner(palabras, ctl))]); }catch(e){ if(e.message === 'detenido') throw e; ctl.aviso('No se pudo usar el detector de nombres (' + e.message + '). Se usará solo tu lista de nombres.'); } }
+  let orden = {}, notaVoz = '';
+  if(cfg.voces !== 'no' && cfg.nVoces >= 2){
+    const prec = cfg.voces === 'preciso', wins = ventanasVoz(palabras, prec ? 2.0 : 1.6, prec ? 1.5 : 0.8), embs = []; let tipo = prec ? 'wavlm' : 'mfcc';
+    const emb1 = async (w, modo) => motores.embed(modo, trozo(audio, w.t0, w.t1), ctl);
+    try{
+      for(let i = 0; i < wins.length; i++){ if(ctl.parar) throw new Error('detenido'); embs.push(await emb1(wins[i], cfg.voces)); if(i % 15 === 0){ ctl.estado(`Separando voces: ${i + 1}/${wins.length}`, 0.6 + 0.02 * i / wins.length); await slp(0); } }
+    }catch(e){
+      if(e.message === 'detenido') throw e;
+      if(prec){ ctl.aviso('El modelo de voces no funcionó (' + e.message + '). Uso el método rápido.'); tipo = 'mfcc'; embs.length = 0; const w2 = ventanasVoz(palabras, 1.6, 0.8); wins.length = 0; wins.push(...w2); for(const w of wins) embs.push(await emb1(w, 'rapido')); } else throw e;
+    }
+    const r = asignarVoces(palabras, wins, embs, cfg.nVoces, tipo); orden = r.orden;
+    if(!Object.keys(orden).length) notaVoz = 'No se pudieron separar voces: asigna los turnos a mano.';
+    else if(r.coh !== undefined && r.coh < 0.6) notaVoz = 'Las voces no se distinguen con claridad (orientativo): comprueba la asignación en el paso 3 o prueba el modo «preciso».';
+  } else palabras.forEach(p => { p.voz = ''; p.vd = false; });
+  ctl.estado('Buscando datos personales en el texto local…', 0.62);
+  const hits = detectarTodo(palabras, lex), redac = intervalosRedaccion(palabras, hits, cfg.padding), turnos = construirTurnos(palabras, cfg.pausaTurno, cfg.maxTurno), piezas = [];
+  turnos.forEach((t, i) => {
+    const vec = [i ? turnos[i - 1].t1 : null, i + 1 < turnos.length ? turnos[i + 1].t0 : null];
+    for(const p of planificarPartes(t, redac)){ if(p.tipo !== 'audio') continue; const [x, y] = extender(p, t, vec, redac, cfg.margen); if(y - x < cfg.minPieza){ p.corta = true; continue; } p.rid = hex(); p.t0e = x; p.t1e = y; p.audio = trozo(audio, x, y); piezas.push(p); }
+  });
+  const segEnv = piezas.reduce((a, p) => a + p.t1e - p.t0e, 0), segCort = redac.reduce((a, r) => a + r.t1 - r.t0, 0);
+  const precio = PRECIOS[cfg.modelo], coste = precio ? segEnv / 60 * precio : null;
+  const resumen = {piezas:piezas.length, segEnviados:r2(segEnv), zonas:redac.length, segCortados:r2(segCort), turnos:turnos.length, voces:Object.keys(orden).length, modelo:cfg.modelo, coste, duracion:r2(dur)};
+  if(!(await ctl.confirmaEnvio(resumen))) throw new Error('detenido');
+  const ok = piezas.length ? await enviar(piezas, cfg, key, ctl) : 0;
+  let fugas = 0;
+  for(const p of piezas){ if(typeof p.texto !== 'string') continue; const ws = p.texto.split(/\s+/).filter(Boolean).map(w => ({w})), h = detectarLexico(ws, lexU); if(h.length){ fugas++; p.fuga = true; for(const [a, b] of h) for(let i = a; i <= b; i++) ws[i].w = i === a ? MARCA : ''; p.texto = ws.map(w => w.w).filter(Boolean).join(' '); } }
+  ctl.estado('Recomponiendo en orden y señalando turnos dudosos…', 0.99);
+  const {segs, voces} = recomponer(turnos, palabras, cfg);
+  return {segs, voces, dur, priv:{piezas:piezas.length, falladas:piezas.length - ok, segEnviados:resumen.segEnviados, zonas:resumen.zonas, segCortados:resumen.segCortados, fugas, modelo:cfg.modelo, coste, voces:Object.keys(orden).length, notaVoz, whisper:cfg.whisper, segundos:Math.round((Date.now() - t0) / 1000), fecha:new Date().toISOString().slice(0, 10)}};
+}
+
+return {PRECIOS, WHISPER, CFG0, MARCA, motores, leeCfg, procesar, hms, normTokens, normText, tokIgual, construirLexico, detectarLexico, detectarPatrones, detectarNumeros, detectarTodo, intervalosRedaccion, entidadesDeNER, ventanasVoz, asignarVoces, kmeansCos, rasgosMFCC, trocear, construirTurnos, planificarPartes, extender, palabrasDe, hayRepeticion, evaluarDudas, recomponer, wavBlob, trozo, puntoCorte, decodificar, enviarPieza};
+})();
+
+/* ══════════ 2b · TRANSCRIPCIÓN PRIVADA: ajustes y flujo ══════════ */
+/* nombres que NUNCA deben llegar a OpenAI (viven solo en este navegador) */
+function terminosProtegidos(){
+  const part = new Set(['de', 'del', 'la', 'las', 'los', 'el', 'y', 'van', 'von', 'da', 'di']);
+  const personas = [...new Set(P.participantes.map(p => String(p.nombre || '').trim()).filter(Boolean))];
+  const sueltos = [...new Set(personas.flatMap(n => n.split(/\s+/)).filter(w => w.length > 2 && !part.has(w.toLowerCase())))];
+  const otros = P.ents.filter(e => e.activo && e.orig.trim()).map(e => ({texto:e.orig.trim(), tipo:e.tipo}));
+  return {personas, sueltos, otros};
+}
+const AJ_PV = [['modeloTr', 'cualitativia_tmodel', 'gpt-4o-mini-transcribe'], ['modeloTrM', 'cualitativia_tmodel', 'gpt-4o-mini-transcribe'], ['pvWhisper', 'pv_whisper', 'base'], ['pvVoces', 'pv_voces', 'rapido'], ['pvDisp', 'pv_disp', 'auto']];
+function sincAjustes(){
+  AJ_PV.forEach(([id, k, d]) => { const el = $(id); if(el && el !== document.activeElement) el.value = localStorage.getItem(k) ?? d; });
+  if($('pvNVoces') !== document.activeElement) $('pvNVoces').value = localStorage.getItem('pv_nvoces') ?? '';
+  $('pvNer').checked = (localStorage.getItem('pv_ner') ?? '1') === '1';
+}
+AJ_PV.forEach(([id, k]) => { $(id).onchange = () => { localStorage.setItem(k, $(id).value); sincAjustes(); }; });
+$('pvNVoces').oninput = () => localStorage.setItem('pv_nvoces', $('pvNVoces').value.trim());
+$('pvNer').onchange = () => localStorage.setItem('pv_ner', $('pvNer').checked ? '1' : '0');
+sincAjustes();
+
+function resumenPriv(t){
+  const v = t.priv; if(!v) return '';
+  const dud = t.segs.filter(s => s.dudoso).length;
+  return `<div class="okbox" style="margin-top:8px">${ico('shield')}<span><b>Transcrito en privado</b> · ${esc(v.modelo)} + Whisper ${esc(v.whisper)} · ${t.segs.length} turnos, ${dud} dudosos · ${v.zonas} zonas con datos personales cortadas (${Math.round(v.segCortados)} s) · enviados a OpenAI: ${v.piezas} trozos (${(v.segEnviados / 60).toFixed(1)} min${v.coste !== null && v.coste !== undefined ? ', ≈ ' + v.coste.toFixed(3) + ' $' : ''})${v.falladas ? ' · <b>' + v.falladas + ' trozos fallaron</b> (se usó el texto local)' : ''}${v.fugas ? ' · <b>' + v.fugas + ' trozos devolvieron un nombre protegido</b> (ocultado): repasa esos turnos' : ''}${v.notaVoz ? '<br>' + esc(v.notaVoz) : ''}</span></div>`;
+}
+
+async function transcribirPrivado(id){
+  const t = P.trans.find(x => x.id === id), f = MEDIA[id]; if(!f) return;
+  if(sinIA()) return toast('El modo sin IA está activado (botón «IA»): desactívalo para enviar trozos a OpenAI, o usa «Solo Chrome».', 7000);
+  const key = localStorage.getItem('ia_openai_key'); if(!key){ $('mAjustes').classList.add('on'); return toast('Pega tu clave de OpenAI para transcribir.'); }
+  if(transActiva) return toast('Ya hay una transcripción en marcha');
+  const term = terminosProtegidos();
+  if(!term.personas.length && !term.otros.length && !confirm('Aún no hay nombres en el estudio (paso 1). Sin ellos, solo se cortarán los datos que la app detecte sola (teléfonos, DNI, fechas y, si está activado, nombres y lugares por el modelo de lenguaje), que falla más. ¿Seguir igualmente?')) return;
+  if(t.segs.length && !confirm('Se sustituirá la transcripción actual de este fichero. ¿Seguir?')) return;
+  const cfg = PV.leeCfg(t.idioma, P.participantes.filter(p => p.codigo).length);
+  const ctl = {parar:false, fr:0.02};
+  ctl.estado = (m, fr) => { ctl.fr = fr; const el = $('prog-' + id); if(el){ el.innerHTML = `<span class="spin"></span> ${esc(m)} · ${Math.round(fr * 100)} % <button class="btn btn-ghost btn-sm" type="button" id="stopPv" style="padding:2px 10px">Detener</button>`; $('stopPv').onclick = () => { ctl.parar = true; }; } };
+  ctl.descarga = p => { if(p && p.status === 'progress' && p.total) ctl.estado(`Descargando un modelo (solo la primera vez): ${String(p.file || p.name || '').split('/').pop()} ${Math.round(p.loaded / p.total * 100)} %`, ctl.fr); };
+  ctl.aviso = m => toast(m, 8000);
+  ctl.confirmaEnvio = async r => { const el = $('prog-' + id); if(el) el.innerHTML = 'Esperando tu confirmación…'; return confirm(`Antes de enviar nada a OpenAI:\n\n• Se han localizado ${r.zonas} zonas con datos personales (${Math.round(r.segCortados)} s). Se CORTAN del audio y no se envían.\n• Se enviarán ${r.piezas} trozos sueltos (${(r.segEnviados / 60).toFixed(1)} min en total) al modelo ${r.modelo}, con nombre de fichero aleatorio y en orden aleatorio.\n• Coste estimado: ${r.coste !== null && r.coste !== undefined ? '≈ ' + r.coste.toFixed(2) + ' $' : 'según la tarifa de OpenAI'}.\n• El audio completo y los nombres reales no salen de tu ordenador.\n\n¿Enviar?`); };
+  transActiva = {id, parar:() => { ctl.parar = true; }};
+  try{
+    const r = await PV.procesar(f, cfg, term, key, ctl), voces = {};
+    t.segs = r.segs.map((s, i) => { const v = String(s.speaker || ''); if(v){ const o = voces[v] = voces[v] || {id:v, turnos:0, seg:0, pregunta:0}; o.turnos++; o.seg += Math.max(0, s.t1 - s.t0); if(/\?\s*$/.test(s.text)) o.pregunta++; } return {id:`${t.id}-${i + 1}`, t0:s.t0, t1:s.t1, h:'', v, texto:s.text, dudoso:s.doubtful, motivo:s.reasons.join('; ')}; });
+    t.dur = r.dur; t.origen = 'privado'; t.priv = r.priv; t.voces = Object.values(voces); sugiereVoces(t); guarda();
+    toast(`Listo: ${t.segs.length} turnos. Ahora asigna las voces en el paso 3.`, 7000);
+  }catch(e){ toast(e.message === 'detenido' ? 'Detenido. No se ha cambiado nada.' : e.message, 9000); }
+  finally{ transActiva = null; pintaFicheros(); }
+}
+
 /* ══════════ 3 · HABLANTES Y REVISIÓN ══════════ */
 let trSel = null, audioRev = null, ultimoFoco = null;
+let soloDud = false;
+function suena(t, desde, dur){ const f = MEDIA[t.id]; if(!f) return toast('Vincula el audio de este fichero en el paso 2 para escucharlo'); if(!audioRev || audioRev._id !== t.id){ if(audioRev){ audioRev.pause(); URL.revokeObjectURL(audioRev.src); } audioRev = new Audio(URL.createObjectURL(f)); audioRev._id = t.id; } audioRev.currentTime = Math.max(0, desde); audioRev.play(); clearTimeout(audioRev._t); audioRev._t = setTimeout(() => audioRev.pause(), dur * 1000); }
+function pintaVoces(t){
+  const el = $('voces'), V = t.voces || [];
+  if(!V.length){ el.innerHTML = ''; el.style.display = 'none'; return; }
+  el.style.display = ''; const H = hablantes(), hay = V.some(v => !v.h && v.sug);
+  el.innerHTML = `<h3 style="margin-top:0">Voces detectadas en el audio</h3><p class="sub" style="margin-top:0">La app separa las voces pero no sabe quién es quién. Elige a quién corresponde cada una (escucha una muestra si dudas) y pulsa «Aplicar». Después podrás corregir turno a turno.${hay ? ' <b>La asignación está sugerida</b> (la voz que más pregunta suele ser la moderadora): compruébala.' : ''}</p>` +
+    V.map((v, i) => `<div class="voz"><b>Voz ${esc(v.id)}</b><span class="help" style="margin:0">${v.turnos} turnos · ${hms(v.seg)}</span><select data-voz="${i}"><option value="">¿quién es?</option>${H.map(h => `<option value="${esc(h.codigo)}" ${(v.h ?? v.sug) === h.codigo ? 'selected' : ''}>${esc(h.codigo)}${h.nombre && h.codigo !== 'MOD' ? ' · ' + esc(h.nombre.split(' ')[0]) : h.codigo === 'MOD' ? ' · moderadora' : ''}</option>`).join('')}</select><button class="btn btn-ghost btn-sm" type="button" data-vplay="${i}">Escuchar muestra</button></div>`).join('') +
+    `<div class="actions" style="margin-top:8px"><button class="btn btn-primary btn-sm" type="button" id="aplicaVoces">Aplicar a los turnos</button><span class="help" style="margin:0">Solo cambia los turnos sin asignar o asignados por una aplicación anterior: tus correcciones manuales se respetan.</span></div>`;
+  $$('#voces [data-vplay]').forEach(b => b.onclick = () => { const v = V[+b.dataset.vplay], propios = t.segs.filter(s => s.v === v.id), s = propios.find(x => x.t1 - x.t0 >= 4) || propios[0]; if(s) suena(t, s.t0 - .3, Math.min(10, Math.max(4, s.t1 - s.t0 + .6))); });
+  $('aplicaVoces').onclick = () => { V.forEach((v, i) => { const sel = el.querySelector(`[data-voz="${i}"]`).value, prev = v.h || ''; v.h = sel; t.segs.forEach(s => { if(s.v === v.id && (!s.h || s.h === prev)) s.h = sel; }); }); guarda(); pintaSegs(); toast('Asignación aplicada. Revisa ahora los turnos dudosos.'); };
+}
 function pintaSegs(){
-  if(!P.trans.length){ $('segs').innerHTML = '<p class="empty" style="padding:20px">Aún no hay transcripciones.</p>'; return; }
+  if(!P.trans.length){ $('segs').innerHTML = '<p class="empty" style="padding:20px">Aún no hay transcripciones.</p>'; $('voces').style.display = 'none'; return; }
   if(!P.trans.some(t => t.id === trSel)) trSel = P.trans[0].id;
   $('selTrans').innerHTML = P.trans.map(t => `<option value="${t.id}" ${t.id === trSel ? 'selected' : ''}>${esc(t.nombre)} (${t.segs.length})</option>`).join('');
-  const t = P.trans.find(x => x.id === trSel), H = hablantes(), sin = t.segs.filter(s => !s.h).length;
-  $('hablInfo').textContent = sin ? `${sin} turno(s) sin asignar` : 'Todos los turnos asignados';
-  $('segs').innerHTML = t.segs.map((s,i) => `<div class="seg"><span class="tm" data-play="${i}" title="Escuchar desde aquí">${hms(s.t0)}</span><select data-h="${i}" class="${s.h ? '' : 'vac'}" aria-label="Hablante del turno ${i + 1}"><option value="">¿quién?</option>${H.map(h => `<option value="${esc(h.codigo)}" ${s.h === h.codigo ? 'selected' : ''}>${esc(h.codigo)}${h.nombre && h.codigo !== 'MOD' ? ' · ' + esc(h.nombre.split(' ')[0]) : h.codigo === 'MOD' ? ' · moderadora' : ''}</option>`).join('')}</select><div contenteditable="true" data-tx="${i}" spellcheck="true">${esc(s.texto)}</div><button class="iconbtn" type="button" data-un="${i}" title="Unir con el anterior" ${i ? '' : 'disabled'}>⤒</button></div>`).join('');
-  $$('#segs [data-h]').forEach(x => x.onchange = () => { const i = +x.dataset.h; t.segs[i].h = x.value; for(let j = i + 1; j < t.segs.length && !t.segs[j].h && t.tipo === 'entrevista'; j++); guarda(); x.className = x.value ? '' : 'vac'; $('hablInfo').textContent = t.segs.filter(s => !s.h).length + ' turno(s) sin asignar'; });
-  $$('#segs [data-tx]').forEach(x => { x.onfocus = () => ultimoFoco = x; x.onblur = () => { t.segs[+x.dataset.tx].texto = x.innerText.trim(); guarda(); }; x.onkeydown = e => { if(e.key === 'Enter'){ e.preventDefault(); const i = +x.dataset.tx, sel = window.getSelection(), pos = sel.anchorOffset, full = x.innerText, a = full.slice(0, pos).trim(), b = full.slice(pos).trim(); if(!a || !b) return; const s = t.segs[i]; s.texto = a; t.segs.splice(i + 1, 0, {id:t.id + '-' + uid(''), t0:s.t1 || s.t0, t1:s.t1, h:'', texto:b}); guarda(); pintaSegs(); } }; });
-  $$('#segs [data-un]').forEach(b => b.onclick = () => { const i = +b.dataset.un, a = t.segs[i - 1], s = t.segs[i]; a.texto += ' ' + s.texto; a.t1 = s.t1; t.segs.splice(i, 1); guarda(); pintaSegs(); });
-  $$('#segs [data-play]').forEach(x => x.onclick = () => { const f = MEDIA[t.id]; if(!f) return toast('Vincula el audio de este fichero en el paso 2 para escucharlo'); if(!audioRev || audioRev._id !== t.id){ if(audioRev){ audioRev.pause(); URL.revokeObjectURL(audioRev.src); } audioRev = new Audio(URL.createObjectURL(f)); audioRev._id = t.id; } const s = t.segs[+x.dataset.play]; audioRev.currentTime = Math.max(0, s.t0 - .5); audioRev.play(); clearTimeout(audioRev._t); audioRev._t = setTimeout(() => audioRev.pause(), Math.max(3, (s.t1 - s.t0) + 1.5) * 1000); });
+  const t = P.trans.find(x => x.id === trSel), H = hablantes();
+  pintaVoces(t);
+  const info = () => { const sin = t.segs.filter(s => !s.h).length, dud = t.segs.filter(s => s.dudoso).length; $('hablInfo').textContent = [sin ? `${sin} turno(s) sin asignar` : 'Todos los turnos asignados', dud ? `${dud} dudoso(s) por revisar` : ''].filter(Boolean).join(' · '); $('btnSigDud').disabled = !dud; };
+  info(); $('soloDud').checked = soloDud;
+  $('segs').innerHTML = t.segs.map((s,i) => `<div class="seg${s.dudoso ? ' dud' : ''}" ${soloDud && !s.dudoso ? 'style="display:none"' : ''}><span class="tm" data-play="${i}" title="Escuchar desde aquí">${hms(s.t0)}</span><select data-h="${i}" class="${s.h ? '' : 'vac'}" aria-label="Hablante del turno ${i + 1}"><option value="">¿quién?</option>${H.map(h => `<option value="${esc(h.codigo)}" ${s.h === h.codigo ? 'selected' : ''}>${esc(h.codigo)}${h.nombre && h.codigo !== 'MOD' ? ' · ' + esc(h.nombre.split(' ')[0]) : h.codigo === 'MOD' ? ' · moderadora' : ''}</option>`).join('')}</select><div contenteditable="true" data-tx="${i}" spellcheck="true">${esc(s.texto)}</div><button class="iconbtn" type="button" data-un="${i}" title="Unir con el anterior" ${i ? '' : 'disabled'}>⤒</button>${s.dudoso ? `<button class="iconbtn okbtn" type="button" data-ok="${i}" title="Marcar como revisado${s.motivo ? ' · Motivo: ' + esc(s.motivo) : ''}">✓</button>` : '<span></span>'}</div>`).join('');
+  $$('#segs [data-h]').forEach(x => x.onchange = () => { const i = +x.dataset.h; t.segs[i].h = x.value; guarda(); x.className = x.value ? '' : 'vac'; info(); });
+  $$('#segs [data-tx]').forEach(x => { x.onfocus = () => ultimoFoco = x; x.onblur = () => { const s = t.segs[+x.dataset.tx], nuevo = x.innerText.trim(); if(nuevo !== s.texto){ s.texto = nuevo; if(s.dudoso){ s.dudoso = false; s.motivo = ''; const fila = x.closest('.seg'); fila.classList.remove('dud'); const ok = fila.querySelector('[data-ok]'); if(ok) ok.style.visibility = 'hidden'; info(); } } guarda(); }; x.onkeydown = e => { if(e.key === 'Enter'){ e.preventDefault(); const i = +x.dataset.tx, sel = window.getSelection(), pos = sel.anchorOffset, full = x.innerText, a = full.slice(0, pos).trim(), b = full.slice(pos).trim(); if(!a || !b) return; const s = t.segs[i]; s.texto = a; t.segs.splice(i + 1, 0, {id:t.id + '-' + uid(''), t0:s.t1 || s.t0, t1:s.t1, h:'', v:s.v, texto:b}); guarda(); pintaSegs(); } }; });
+  $$('#segs [data-ok]').forEach(b => b.onclick = () => { const s = t.segs[+b.dataset.ok], fila = b.closest('.seg'); s.dudoso = false; s.motivo = ''; guarda(); fila.classList.remove('dud'); b.style.visibility = 'hidden'; if(soloDud) fila.style.display = 'none'; info(); });
+  $$('#segs [data-un]').forEach(b => b.onclick = () => { const i = +b.dataset.un, a = t.segs[i - 1], s = t.segs[i]; a.texto += ' ' + s.texto; a.t1 = s.t1; if(s.dudoso) a.dudoso = true; t.segs.splice(i, 1); guarda(); pintaSegs(); });
+  $$('#segs [data-play]').forEach(x => x.onclick = () => { const s = t.segs[+x.dataset.play]; suena(t, s.t0 - .5, Math.max(3, (s.t1 - s.t0) + 1.5)); });
 }
+$('soloDud').onchange = () => { soloDud = $('soloDud').checked; pintaSegs(); };
+$('btnSigDud').onclick = () => { const cont = $('segs'), filas = [...cont.children], ds = filas.filter(e => e.classList.contains('dud')); if(!ds.length) return; const ref = ultimoFoco && ultimoFoco.closest('.seg'), pos = ref ? filas.indexOf(ref) : -1, sig = ds.find(e => filas.indexOf(e) > pos) || ds[0]; sig.scrollIntoView({block:'center'}); const ed = sig.querySelector('[data-tx]'); if(ed) ed.focus(); };
 $('selTrans').onchange = () => { trSel = $('selTrans').value; pintaSegs(); };
 $$('[data-ins]').forEach(b => b.onmousedown = e => { e.preventDefault(); if(!ultimoFoco) return toast('Pon primero el cursor dentro de un turno'); ultimoFoco.focus(); document.execCommand('insertText', false, ' ' + b.dataset.ins + ' '); });
 
@@ -991,45 +1503,79 @@ $('envioOk').onchange = () => { $('envioSi').disabled = !$('envioOk').checked; }
 $('envioSi').onclick = () => { $('mEnvio').classList.remove('on'); analizar(); };
 function anLog(t, c = ''){ $('anLog').insertAdjacentHTML('beforeend', `<div>${c === 'ok' ? '✓' : c === 'ko' ? '⚠' : '·'} ${esc(t)}</div>`); }
 function validaCitas(citas, permitidos, mapa){ const out = []; (citas || []).forEach(c => { const s = mapa[c.seg]; if(!s || !permitidos.includes(c.seg)) return; const f = String(c.texto || '').trim(); if(f.length < 8) return; if(norm(s.t).includes(norm(f))) out.push({seg:c.seg, texto:f}); }); return out; }
+const trocea = (arr, max) => { const out = []; let cur = [], n = 0; arr.forEach(s => { cur.push(s); n += String(s.id).length + String(s.h).length + String(s.t).length + 6; if(n > max){ out.push(cur); cur = []; n = 0; } }); if(cur.length) out.push(cur); return out; };
+const reglasDe = (L, marco, exh) => `REGLAS: usa solo los identificadores de segmento que aparecen; las citas deben ser fragmentos copiados literalmente (sin cambiar ni una palabra) del segmento indicado, de 8 a 40 palabras, elegidos porque ilustran bien el código${exh ? '; da entre 2 y 5 citas por código cuando haya material suficiente' : ''}; ${exh ? 'asigna a cada código TODOS los segmentos que lo ilustren, no solo los más claros (un segmento puede ir en varios códigos); ' : ''}no codifiques las intervenciones de MOD salvo que aporten contenido. ${L.p}${marco ? ' MARCO TEÓRICO: ' + marco : ''}`;
+function mkNodo(c, nivel, ctx){ const segs = [...new Set((c.segmentos || []).filter(id => ctx.ids.has(id)))], citas = validaCitas(c.citas, segs, ctx.mapa); ctx.descartadas += (c.citas || []).length - citas.length; return {id:uid('c'), nombre:String(c.nombre || '').trim() || 'Sin nombre', definicion:c.definicion || '', segs, citas, hijos:[], nivel, cierre:''}; }
+/* subdivide un código en subcódigos. forzar = la investigadora lo pide: se ignoran los mínimos y la profundidad máxima */
+async function subdivide(nodo, ruta, ctx, forzar = false){
+  if(forzar){ if(nodo.segs.length < 2){ nodo.cierre = 'un solo fragmento: no hay nada que subdividir'; return; } if(nodo.nivel >= 8){ nodo.cierre = 'profundidad máxima absoluta (8)'; return; } }
+  else {
+    if(nodo.segs.length < ctx.minS){ nodo.cierre = `pocos fragmentos: ${nodo.segs.length}, mínimo para subdividir ${ctx.minS}`; return; }
+    if(nodo.nivel >= ctx.maxN){ nodo.cierre = `profundidad máxima (${ctx.maxN})`; return; }
+    if(ctx.lp >= ctx.tope){ nodo.cierre = 'tope de consultas'; return; }
+  }
+  const S = nodo.segs.map(id => ctx.mapa[id]).filter(Boolean), ev = (ctx.exh || forzar) ? 1 : (ctx.minS > 2 ? 2 : 1); ctx.lp++; ctx.llamadas++;
+  const pregunta = forzar
+    ? `La investigadora te pide PROFUNDIZAR en este código: propón entre 2 y 5 subcódigos que recojan matices, dimensiones o situaciones distintas, aunque cada uno tenga pocos fragmentos. Responde saturado=true solo si de verdad todos los fragmentos dicen lo mismo.`
+    : `¿Contienen estos fragmentos SUBTEMAS realmente distintos, cada uno con evidencia propia en al menos ${ev} fragmento(s)? Profundiza solo si aporta matices analíticos nuevos (no repartas por repartir ni subdividas por participante). ${ctx.exh ? 'En modo exhaustivo, prefiere subdividir cuando haya matices diferenciables aunque sean pocos fragmentos. ' : ''}Si las ideas se agotan aquí, responde saturado=true.`;
+  const r = await ia(`OBJETIVOS: ${ctx.obj}\nRUTA EN EL ÁRBOL: ${[...ruta, nodo.nombre].join(' > ')}\nCÓDIGO: ${nodo.nombre}: ${nodo.definicion}\n\n${pregunta}\n${ctx.REGLAS}\nDevuelve {"saturado":false,"motivo":"por qué se detiene o por qué se subdivide","subcodigos":[{"nombre":"","definicion":"","segmentos":[""],"citas":[{"seg":"","texto":""}]}]}\n\nFRAGMENTOS (id | hablante | texto):\n${lineas(S).slice(0, 30000)}`, 4000);
+  const hijos = r.saturado ? [] : (r.subcodigos || []).map(c => { const h = mkNodo(c, nodo.nivel + 1, ctx); h.segs = h.segs.filter(id => nodo.segs.includes(id)); h.citas = h.citas.filter(x => h.segs.includes(x.seg)); return h; }).filter(h => h.segs.length);
+  if(hijos.length < 2){ nodo.cierre = 'ideas agotadas' + (r.motivo ? ': ' + r.motivo : ''); return; }
+  nodo.hijos = hijos; nodo.cierre = ''; nodo.motivo = r.motivo || ''; anLog(`  ${'·'.repeat(nodo.nivel)} «${nodo.nombre}» → ${hijos.length} subcódigos`);
+  for(const h of hijos) await subdivide(h, [...ruta, nodo.nombre], ctx);
+}
 async function analizar(){
-  trabajando = true; updateNav(); $('anLog').innerHTML = ''; const C = corpus(), mapa = Object.fromEntries(C.map(s => [s.id, s])), ids = new Set(C.map(s => s.id)), maxN = +$('maxNiv').value, minS = +$('minSeg').value, tope = +$('tope').value, obj = anonimiza(P.objetivos || '(no indicados)');
+  trabajando = true; updateNav(); $('anLog').innerHTML = '';
+  const C = corpus(), mapa = Object.fromEntries(C.map(s => [s.id, s])), ids = new Set(C.map(s => s.id)), exh = $('exhaust').value === 'exh', maxN = +$('maxNiv').value, minS0 = +$('minSeg').value, minS = exh ? Math.min(minS0, 2) : minS0, tope = +$('tope').value, obj = anonimiza(P.objetivos || '(no indicados)');
   let descartadas = 0;
   try{
     for(const lk of lentesSel){
-      const L = LENTES[lk], marco = lk === 'teorica' ? $('marco').value.trim() : ''; let llamadas = 0;
+      const L = LENTES[lk], marco = lk === 'teorica' ? $('marco').value.trim() : '', REGLAS = reglasDe(L, marco, exh), ctx = {obj, mapa, ids, exh, maxN, minS, tope, lp:0, llamadas:0, descartadas:0, REGLAS};
       anLog(`Interpretación ${L.n}: códigos de primer nivel…`);
-      const lotes = []; let cur = []; C.forEach(s => { cur.push(s); if(lineas(cur).length > 38000){ lotes.push(cur); cur = []; } }); if(cur.length) lotes.push(cur);
+      const lotes = trocea(C, 38000);
       const PIDE = `Devuelve {"codigos":[{"nombre":"","definicion":"qué recoge y qué no","segmentos":["T1-3"],"citas":[{"seg":"T1-3","texto":"fragmento LITERAL copiado del segmento"}]}]}`;
-      const REGLAS = `REGLAS: usa solo los identificadores de segmento que aparecen; las citas deben ser fragmentos copiados literalmente (sin cambiar ni una palabra) del segmento indicado, de 10 a 40 palabras, elegidos porque ilustran bien el código; no codifiques las intervenciones de MOD salvo que aporten contenido. ${L.p}${marco ? ' MARCO TEÓRICO: ' + marco : ''}`;
       let N1;
-      if(lotes.length === 1){ N1 = (await ia(`OBJETIVOS DEL ESTUDIO: ${obj}\n\nPropón entre 4 y 8 códigos de primer nivel y asígnales sus segmentos.\n${REGLAS}\n${PIDE}\n\nTRANSCRIPCIONES (id | hablante | texto):\n${lineas(C)}`, 6000)).codigos || []; llamadas++; }
-      else { const cand = []; for(const [i,l] of lotes.entries()){ anLog(`  Lote ${i + 1} de ${lotes.length}…`); cand.push(...((await ia(`OBJETIVOS: ${obj}\nPropón códigos de primer nivel para este lote.\n${REGLAS}\nDevuelve {"codigos":[{"nombre":"","definicion":""}]}\n\n${lineas(l)}`, 3000)).codigos || [])); llamadas++; }
-        const U = (await ia(`OBJETIVOS: ${obj}\nUnifica estos códigos candidatos de varios lotes en 4-8 códigos de primer nivel, fusionando los equivalentes. ${L.p}\nDevuelve {"codigos":[{"nombre":"","definicion":""}]}\n\n${JSON.stringify(cand)}`, 2500)).codigos || []; llamadas++;
-        N1 = U.map(u => ({...u, segmentos:[], citas:[]})); for(const l of lotes){ const a = await ia(`Asigna cada segmento a los códigos que le correspondan (puede ser ninguno o varios) y elige citas literales.\nCÓDIGOS: ${JSON.stringify(U)}\n${REGLAS}\nDevuelve {"asignacion":[{"codigo":"nombre exacto","segmentos":["T1-3"],"citas":[{"seg":"","texto":""}]}]}\n\n${lineas(l)}`, 5000); llamadas++; (a.asignacion || []).forEach(x => { const c = N1.find(n => norm(n.nombre) === norm(x.codigo)); if(c){ c.segmentos.push(...(x.segmentos || [])); c.citas.push(...(x.citas || [])); } }); } }
-      const mk = (c, nivel) => { const segs = [...new Set((c.segmentos || []).filter(id => ids.has(id)))], citas = validaCitas(c.citas, segs, mapa); descartadas += (c.citas || []).length - citas.length; return {id:uid('c'), nombre:String(c.nombre || '').trim() || 'Sin nombre', definicion:c.definicion || '', segs, citas, hijos:[], nivel, cierre:''}; };
-      const raiz = N1.map(c => mk(c, 1)).filter(c => c.segs.length);
+      if(lotes.length === 1 && !exh){ N1 = (await ia(`OBJETIVOS DEL ESTUDIO: ${obj}\n\nPropón entre 4 y 8 códigos de primer nivel y asígnales sus segmentos.\n${REGLAS}\n${PIDE}\n\nTRANSCRIPCIONES (id | hablante | texto):\n${lineas(C)}`, 6000)).codigos || []; ctx.llamadas++; }
+      else {
+        const cand = [];
+        for(const [i,l] of lotes.entries()){ if(lotes.length > 1) anLog(`  Lote ${i + 1} de ${lotes.length}…`); cand.push(...((await ia(`OBJETIVOS: ${obj}\nPropón ${lotes.length === 1 ? 'entre 5 y 10 ' : ''}códigos de primer nivel para ${lotes.length === 1 ? 'estas transcripciones' : 'este lote'}.\n${REGLAS}\nDevuelve {"codigos":[{"nombre":"","definicion":""}]}\n\n${lineas(l)}`, 3000)).codigos || [])); ctx.llamadas++; }
+        let U = cand;
+        if(lotes.length > 1){ U = (await ia(`OBJETIVOS: ${obj}\nUnifica estos códigos candidatos de varios lotes en 5-10 códigos de primer nivel, fusionando los equivalentes. ${L.p}\nDevuelve {"codigos":[{"nombre":"","definicion":""}]}\n\n${JSON.stringify(cand)}`, 2500)).codigos || []; ctx.llamadas++; }
+        const vistos = new Set(); U = U.filter(u => { const k = norm(u.nombre); if(!k || vistos.has(k)) return false; vistos.add(k); return true; });
+        N1 = U.map(u => ({...u, segmentos:[], citas:[]}));
+        const lotesA = trocea(C, exh ? 14000 : 38000);
+        for(const [i,l] of lotesA.entries()){ anLog(`  Asignando fragmentos a los códigos (${i + 1}/${lotesA.length})…`); const a = await ia(`Asigna cada segmento a los códigos que le correspondan (puede ser ninguno o varios) y elige citas literales.\nCÓDIGOS: ${JSON.stringify(U)}\n${REGLAS}\nDevuelve {"asignacion":[{"codigo":"nombre exacto","segmentos":["T1-3"],"citas":[{"seg":"","texto":""}]}]}\n\n${lineas(l)}`, 5000); ctx.llamadas++; (a.asignacion || []).forEach(x => { const c = N1.find(n => norm(n.nombre) === norm(x.codigo)); if(c){ c.segmentos.push(...(x.segmentos || [])); c.citas.push(...(x.citas || [])); } }); }
+      }
+      const raiz = N1.map(c => mkNodo(c, 1, ctx)).filter(c => c.segs.length);
       anLog(`  ${raiz.length} códigos de primer nivel`, 'ok');
-      const profundiza = async (nodo, ruta) => {
-        if(nodo.segs.length < minS){ nodo.cierre = 'pocos fragmentos'; return; } if(nodo.nivel >= maxN){ nodo.cierre = 'profundidad máxima'; return; } if(llamadas >= tope){ nodo.cierre = 'tope de consultas'; return; }
-        const S = nodo.segs.map(id => mapa[id]).filter(Boolean); llamadas++;
-        const r = await ia(`OBJETIVOS: ${obj}\nRUTA EN EL ÁRBOL: ${[...ruta, nodo.nombre].join(' > ')}\nCÓDIGO: ${nodo.nombre}: ${nodo.definicion}\n\n¿Contienen estos fragmentos SUBTEMAS realmente distintos, cada uno con evidencia propia en al menos ${minS > 2 ? 2 : 1} fragmentos? Profundiza solo si aporta matices analíticos nuevos (no repartas por repartir ni subdividas por participante). Si las ideas se agotan aquí, responde saturado=true.\n${REGLAS}\nDevuelve {"saturado":false,"motivo":"por qué se detiene o por qué se subdivide","subcodigos":[{"nombre":"","definicion":"","segmentos":[""],"citas":[{"seg":"","texto":""}]}]}\n\nFRAGMENTOS (id | hablante | texto):\n${lineas(S).slice(0, 30000)}`, 4000);
-        const hijos = r.saturado ? [] : (r.subcodigos || []).map(c => { const h = mk(c, nodo.nivel + 1); h.segs = h.segs.filter(id => nodo.segs.includes(id)); h.citas = h.citas.filter(x => h.segs.includes(x.seg)); return h; }).filter(h => h.segs.length);
-        if(hijos.length < 2){ nodo.cierre = 'ideas agotadas' + (r.motivo ? ': ' + r.motivo : ''); return; }
-        nodo.hijos = hijos; nodo.motivo = r.motivo || ''; anLog(`  ${'·'.repeat(nodo.nivel)} «${nodo.nombre}» → ${hijos.length} subcódigos`);
-        for(const h of hijos) await profundiza(h, [...ruta, nodo.nombre]);
-      };
-      for(const n of raiz) await profundiza(n, []);
+      for(const n of raiz) await subdivide(n, [], ctx);
       let rel = [];
-      if(lk !== 'tematica' && raiz.length > 1 && llamadas < tope + 2){ const nombres = []; const rec = (ns) => ns.forEach(n => { if(n.nivel <= 2) nombres.push(n.nombre); rec(n.hijos); }); rec(raiz);
+      if(lk !== 'tematica' && raiz.length > 1 && ctx.lp < tope + 2){ const nombres = []; const rec = (ns) => ns.forEach(n => { if(n.nivel <= 2) nombres.push(n.nombre); rec(n.hijos); }); rec(raiz);
         const r = await ia(`Identifica relaciones analíticas entre estos códigos (condición, causa, consecuencia, estrategia ante, tensión con, contradice), solo si hay evidencia en los fragmentos.\nCÓDIGOS: ${nombres.join(' | ')}\nDevuelve {"relaciones":[{"de":"nombre exacto","a":"nombre exacto","tipo":"","explicacion":"","segmentos":[""]}]}\n\n${lineas(C).slice(0, 30000)}`, 2500);
         rel = (r.relaciones || []).filter(x => nombres.some(n => norm(n) === norm(x.de)) && nombres.some(n => norm(n) === norm(x.a))).map(x => ({...x, segmentos:(x.segmentos || []).filter(id => ids.has(id))})); }
       const prof = (ns) => Math.max(0, ...ns.map(n => n.hijos.length ? prof(n.hijos) : n.nivel));
-      P.arboles.push({id:uid('A'), lente:lk, nombre:L.n + (marco ? ` · ${marco}` : ''), fecha:new Date().toISOString(), codigos:raiz, relaciones:rel, llamadas, opciones:{maxN, minS}});
-      anLog(`${L.n}: ${raiz.length} códigos, profundidad máxima ${prof(raiz)}, ${llamadas} consultas`, 'ok');
+      descartadas += ctx.descartadas;
+      P.arboles.push({id:uid('A'), lente:lk, nombre:L.n + (marco ? ` · ${marco}` : ''), fecha:new Date().toISOString(), codigos:raiz, relaciones:rel, llamadas:ctx.llamadas, marco, opciones:{maxN, minS, exh}});
+      anLog(`${L.n}: ${raiz.length} códigos, profundidad alcanzada ${prof(raiz)} (tope ${maxN}), ${ctx.llamadas} consultas`, 'ok');
     }
-    if(descartadas) anLog(`${descartadas} cita(s) descartada(s) por no aparecer literalmente en su segmento`, 'ko');
+    if(descartadas) anLog(`${descartadas} cita(s) descartada(s) por no aparecer literalmente en su segmento (los fragmentos siguen asignados al código)`, 'ko');
     arbolSel = P.arboles[P.arboles.length - 1].id; guarda(); toast('Análisis terminado');
   }catch(e){ anLog(e.message, 'ko'); toast(e.message, 6000); }
+  finally{ trabajando = false; updateNav(); pintaArboles(); }
+}
+/* profundizar a petición de la investigadora en un código sin hijos */
+async function profundizaManual(A, id){
+  if(sinIA()) return toast('Desactiva el modo sin IA en el botón «IA» para usar esta función');
+  if(!localStorage.getItem('ia_openai_key')){ $('mAjustes').classList.add('on'); return toast('Pega tu clave de OpenAI'); }
+  const hallar = (ns, ruta) => { for(const n of ns){ if(n.id === id) return {n, ruta}; const r = hallar(n.hijos, [...ruta, n.nombre]); if(r) return r; } return null; };
+  const f = hallar(A.codigos, []); if(!f) return; const nodo = f.n;
+  const C = corpus(), mapa = Object.fromEntries(C.map(s => [s.id, s])), ids = new Set(C.map(s => s.id)), S = nodo.segs.map(i => mapa[i]).filter(Boolean), R = residuos(S);
+  if(!confirm(`Se enviarán a OpenAI ${S.length} fragmentos YA ANONIMIZADOS del código «${nodo.nombre}» para proponer subcódigos.${R.length ? `\n\nOJO: posibles datos personales sin sustituir: ${R.slice(0, 10).map(x => x.v).join(', ')}. Cancela y revisa el paso 4 si alguno debe sustituirse.` : ''}\n\n¿Seguir?`)) return;
+  trabajando = true; updateNav(); $('anLog').innerHTML = '';
+  try{ const L = LENTES[A.lente] || LENTES.tematica, ctx = {obj:anonimiza(P.objetivos || '(no indicados)'), mapa, ids, exh:true, maxN:8, minS:2, tope:99, lp:0, llamadas:0, descartadas:0, REGLAS:reglasDe(L, A.marco || '', true)};
+    await subdivide(nodo, f.ruta, ctx, true); A.llamadas = (A.llamadas || 0) + ctx.llamadas; guarda();
+    toast(nodo.hijos.length ? `${nodo.hijos.length} subcódigos propuestos` : 'La IA no ve subtemas distintos aquí: ' + (nodo.cierre || ''), 6000); }
+  catch(e){ toast(e.message, 6000); }
   finally{ trabajando = false; updateNav(); pintaArboles(); }
 }
 function contar(n){ return 1 + n.hijos.reduce((s,h) => s + contar(h), 0); }
@@ -1040,14 +1586,19 @@ function pintaArboles(){
   $$('#tabs [data-ab]').forEach(b => b.onclick = () => { arbolSel = b.dataset.ab; pintaArboles(); });
   $('verReales').onchange = () => { verReales = $('verReales').checked; pintaArboles(); };
   const A = P.arboles.find(a => a.id === arbolSel), partes = id => { const s = segPorId(id); return s ? s.h : '?'; };
-  const nodoH = (n) => { const ps = [...new Set(n.segs.map(partes).filter(h => h && h !== 'MOD'))]; return `<div class="nodo" style="--d:${n.nivel - 1}"><div class="t" data-tog="${n.id}"><b>${esc(n.nombre)}</b><span class="c">${n.segs.length} frag. · ${ps.length} part.</span>${n.hijos.length ? '' : `<span class="sat" title="${esc(n.cierre)}">${esc((n.cierre || '').split(':')[0])}</span>`}<button class="iconbtn" type="button" data-ren="${n.id}" title="Renombrar" style="margin-left:auto">${ico('pencil')}</button><button class="iconbtn" type="button" data-del="${n.id}" title="Quitar">${ico('trash')}</button></div><div class="def">${esc(n.definicion)}</div><div id="cit-${n.id}" class="hidden">${n.citas.map(c => `<div class="cita">«${esc(verReales ? reidentifica(c.texto) : c.texto)}»<small>${esc(c.seg)} · ${esc(partes(c.seg))}</small></div>`).join('') || '<p class="help">Sin citas verificadas para este código.</p>'}</div></div>${n.hijos.map(nodoH).join('')}`; };
-  $('arbol').innerHTML = `<p class="help" style="margin-top:0">Pulsa un código para ver sus citas literales. La etiqueta gris indica por qué se detuvo esa rama.</p>` + A.codigos.map(nodoH).join('');
+  const nodoH = (n) => { const ps = [...new Set(n.segs.map(partes).filter(h => h && h !== 'MOD'))], hoja = !n.hijos.length, citados = new Set(n.citas.map(c => c.seg));
+    const frag = n.segs.map(id => { const s = segPorId(id); if(!s) return ''; return `<div class="cita" style="font-size:13px">${esc(verReales ? s.texto : anonimiza(s.texto))}<small>${esc(id)} · ${esc(s.h || '?')}${citados.has(id) ? ' · cita destacada' : ''}</small></div>`; }).join('');
+    return `<div class="nodo" style="--d:${n.nivel - 1}"><div class="t" data-tog="${n.id}"><b>${esc(n.nombre)}</b><span class="c">${n.segs.length} frag. · ${ps.length} part.</span>${hoja ? `<span class="sat" title="${esc(n.cierre)}">${esc((n.cierre || '').split(/[:(]/)[0].trim())}</span>` : ''}<span style="flex:1"></span>${hoja ? `<button class="iconbtn" type="button" data-prof="${n.id}" title="Pedir a la IA que subdivida este código">${ico('sparkles')}</button>` : ''}<button class="iconbtn" type="button" data-ren="${n.id}" title="Renombrar">${ico('pencil')}</button><button class="iconbtn" type="button" data-del="${n.id}" title="Quitar">${ico('trash')}</button></div><div class="def">${esc(n.definicion)}</div><div id="cit-${n.id}" class="hidden">${n.citas.map(c => `<div class="cita">«${esc(verReales ? reidentifica(c.texto) : c.texto)}»<small>${esc(c.seg)} · ${esc(partes(c.seg))}</small></div>`).join('') || '<p class="help">Sin citas destacadas verificadas para este código.</p>'}<details><summary>Todos los fragmentos codificados aquí (${n.segs.length})</summary>${frag}</details>${hoja && n.cierre ? `<p class="help">Se detuvo aquí: ${esc(n.cierre)}. Con ✦ puedes pedir subcódigos igualmente.</p>` : ''}</div></div>${n.hijos.map(nodoH).join('')}`; };
+  $('arbol').innerHTML = `<p class="help" style="margin-top:0">Pulsa un código para ver sus citas y todos los fragmentos codificados. La etiqueta gris indica por qué se detuvo esa rama; ✦ pide más profundidad en ese código.</p>` + A.codigos.map(nodoH).join('');
   $$('#arbol [data-tog]').forEach(t => t.onclick = e => { if(e.target.closest('button')) return; $('cit-' + t.dataset.tog).classList.toggle('hidden'); });
+  $$('#arbol [data-prof]').forEach(b => b.onclick = e => { e.stopPropagation(); profundizaManual(A, b.dataset.prof); });
   const busca = (ns, id, pad) => { for(const [i,n] of ns.entries()){ if(n.id === id) return [ns, i]; const r = busca(n.hijos, id); if(r) return r; } return null; };
   $$('#arbol [data-ren]').forEach(b => b.onclick = () => { const [ns,i] = busca(A.codigos, b.dataset.ren), v = prompt('Nuevo nombre del código', ns[i].nombre); if(v){ ns[i].nombre = v.trim(); guarda(); pintaArboles(); } });
   $$('#arbol [data-del]').forEach(b => b.onclick = () => { const [ns,i] = busca(A.codigos, b.dataset.del); if(confirm(`¿Quitar «${ns[i].nombre}» y sus subcódigos?`)){ ns.splice(i, 1); guarda(); pintaArboles(); } });
   const niveles = {}; const rec = ns => ns.forEach(n => { if(!n.hijos.length) niveles[n.nivel] = (niveles[n.nivel] || 0) + 1; rec(n.hijos); }); rec(A.codigos);
-  $('arbolSide').innerHTML = `<h3><svg class="i"><use href="#i-grid"/></svg>Esta interpretación</h3><p class="sub">${esc(LENTES[A.lente]?.d || '')}</p><p class="help">Ramas terminadas por nivel: ${Object.entries(niveles).map(([k,v]) => `nivel ${k}: ${v}`).join(' · ')}. ${A.llamadas ? A.llamadas + ' consultas.' : ''}</p>${(A.relaciones || []).length ? `<p class="sublab">Relaciones entre códigos</p>${A.relaciones.map(r => `<div class="rel"><b>${esc(r.de)}</b> <i>${esc(r.tipo)}</i> <b>${esc(r.a)}</b><br><span class="help" style="margin:0">${esc(r.explicacion)}${r.segmentos?.length ? ' · ' + esc(r.segmentos.join(', ')) : ''}</span></div>`).join('')}` : ''}<button class="btn btn-ghost btn-sm" type="button" id="borrarArbol" style="margin-top:10px">${ico('trash')}Borrar esta interpretación</button>`;
+  const codif = new Set(); const rec2 = ns => ns.forEach(n => { n.segs.forEach(id => codif.add(id)); rec2(n.hijos); }); rec2(A.codigos);
+  const parts = todosSegs().filter(s => s.h !== 'MOD' && s.texto && s.texto.trim()), cub = parts.filter(s => codif.has(s.id)).length;
+  $('arbolSide').innerHTML = `<h3><svg class="i"><use href="#i-grid"/></svg>Esta interpretación</h3><p class="sub">${esc(LENTES[A.lente]?.d || '')}</p><p class="help"><b>Cobertura:</b> ${cub} de ${parts.length} fragmentos de participantes tienen al menos un código${parts.length ? ` (${Math.round(cub / parts.length * 100)} %)` : ''}. Ramas terminadas por nivel: ${Object.entries(niveles).map(([k,v]) => `nivel ${k}: ${v}`).join(' · ')}. ${A.llamadas ? A.llamadas + ' consultas.' : ''}</p>${(A.relaciones || []).length ? `<p class="sublab">Relaciones entre códigos</p>${A.relaciones.map(r => `<div class="rel"><b>${esc(r.de)}</b> <i>${esc(r.tipo)}</i> <b>${esc(r.a)}</b><br><span class="help" style="margin:0">${esc(r.explicacion)}${r.segmentos?.length ? ' · ' + esc(r.segmentos.join(', ')) : ''}</span></div>`).join('')}` : ''}<button class="btn btn-ghost btn-sm" type="button" id="borrarArbol" style="margin-top:10px">${ico('trash')}Borrar esta interpretación</button>`;
   $('borrarArbol').onclick = () => { if(confirm('¿Borrar esta interpretación?')){ P.arboles = P.arboles.filter(a => a.id !== A.id); guarda(); pintaArboles(); } };
 }
 
@@ -1072,45 +1623,80 @@ const lineaMaxqda = s => `#${hms(s.t0)}-0# ${nombreHab(s.h)}: ${textoSeg(s)}`;
 function pintaExport(){ $('selExp').innerHTML = P.arboles.map(a => `<option value="${a.id}">${esc(a.nombre)}</option>`).join('') || '<option value="">(sin árboles)</option>'; }
 const base = () => 'cualitativia_' + norm(P.titulo || 'estudio').replace(/ /g, '_').slice(0, 30);
 $('expTxt').onclick = () => { if(!P.trans.length) return toast('No hay transcripciones'); P.trans.forEach((t,i) => setTimeout(() => dl(`${(version() === 'anon' ? t.id : t.nombre).replace(/[^\w-]+/g, '_')}_${version()}.txt`, '\ufeff' + t.segs.map(lineaMaxqda).join('\r\n\r\n'), 'text/plain;charset=utf-8'), i * 400)); };
-async function docxLib(){ if(!window.docx) await cargaLib(['https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js']); return window.docx; }
-const Pd = (D, t, o = {}) => new D.Paragraph({heading:o.h, pageBreakBefore:o.pb, spacing:{after:o.after ?? 100}, indent:o.ind ? {left:o.ind} : undefined, children:[new D.TextRun({text:String(t ?? ''), font:'Arial', size:o.s || 22, bold:o.b, italics:o.i, color:o.c})]});
-$('expTransDocx').onclick = async () => { try{ const D = await docxLib(), k = []; P.trans.forEach((t,i) => { k.push(Pd(D, version() === 'anon' ? t.id : t.nombre, {h:D.HeadingLevel.HEADING_1, pb:i > 0})); t.segs.forEach(s => k.push(new D.Paragraph({spacing:{after:120}, children:[new D.TextRun({text:`${hms(s.t0)}  `, font:'Consolas', size:18, color:'5D7691'}), new D.TextRun({text:nombreHab(s.h) + ': ', bold:true, font:'Arial', size:22}), new D.TextRun({text:textoSeg(s), font:'Arial', size:22})]}))); }); dl(base() + '_transcripciones_' + version() + '.docx', await D.Packer.toBlob(new D.Document({creator:'CualitativIA', sections:[{children:k}]}))); }catch(e){ toast(e.message); } };
+/* ── ZIP y DOCX propios: sin librerías externas, funcionan sin conexión y sin depender de ningún CDN ── */
+const CRC_T = (() => { const t = new Uint32Array(256); for(let n = 0; n < 256; n++){ let c = n; for(let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = u8 => { let c = 0xFFFFFFFF; for(let i = 0; i < u8.length; i++) c = CRC_T[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+function zipStore(files, mime = 'application/zip'){
+  const enc = new TextEncoder(), parts = [], cen = [], now = new Date(); let off = 0;
+  const dt = (((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate()) & 0xFFFF, tm = ((now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1)) & 0xFFFF;
+  for(const f of files){
+    const nb = enc.encode(f.name), dat = typeof f.data === 'string' ? enc.encode(f.data) : f.data, c = crc32(dat);
+    const lh = new DataView(new ArrayBuffer(30)); lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(10, tm, true); lh.setUint16(12, dt, true); lh.setUint32(14, c, true); lh.setUint32(18, dat.length, true); lh.setUint32(22, dat.length, true); lh.setUint16(26, nb.length, true);
+    parts.push(new Uint8Array(lh.buffer), nb, dat);
+    const ch = new DataView(new ArrayBuffer(46)); ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(12, tm, true); ch.setUint16(14, dt, true); ch.setUint32(16, c, true); ch.setUint32(20, dat.length, true); ch.setUint32(24, dat.length, true); ch.setUint16(28, nb.length, true); ch.setUint32(42, off, true);
+    cen.push(new Uint8Array(ch.buffer), nb); off += 30 + nb.length + dat.length;
+  }
+  const csz = cen.reduce((s, x) => s + x.length, 0), fin = new DataView(new ArrayBuffer(22));
+  fin.setUint32(0, 0x06054b50, true); fin.setUint16(8, files.length, true); fin.setUint16(10, files.length, true); fin.setUint32(12, csz, true); fin.setUint32(16, off, true);
+  return new Blob([...parts, ...cen, new Uint8Array(fin.buffer)], {type:mime});
+}
+/* párrafo = {t, st:'Heading1'|'Title', b, i, c, s, f, ind, pb, after, runs:[{t,b,i,c,s,f}]} */
+function docxBlob(paras){
+  const X = s => xesc(String(s ?? '')).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
+  const run = r => { const rp = `${r.f ? `<w:rFonts w:ascii="${r.f}" w:hAnsi="${r.f}" w:cs="${r.f}"/>` : ''}${r.b ? '<w:b/>' : ''}${r.i ? '<w:i/>' : ''}${r.c ? `<w:color w:val="${r.c}"/>` : ''}${r.s ? `<w:sz w:val="${r.s}"/>` : ''}`; return `<w:r>${rp ? `<w:rPr>${rp}</w:rPr>` : ''}<w:t xml:space="preserve">${X(r.t)}</w:t></w:r>`; };
+  const para = p => `<w:p><w:pPr>${p.st ? `<w:pStyle w:val="${p.st}"/>` : ''}${p.pb ? '<w:pageBreakBefore/>' : ''}<w:spacing w:after="${p.after ?? 100}"/>${p.ind ? `<w:ind w:left="${p.ind}"/>` : ''}</w:pPr>${(p.runs || [{t:p.t, b:p.b, i:p.i, c:p.c, s:p.s, f:p.f}]).map(run).join('')}</w:p>`;
+  const NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"', H = [[1, 32], [2, 28], [3, 25], [4, 23], [5, 22]];
+  const estilo = (id, nombre, _x, sz, lvl) => `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${nombre}"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="240" w:after="100"/>${lvl != null ? `<w:outlineLvl w:val="${lvl}"/>` : ''}</w:pPr><w:rPr><w:b/><w:color w:val="1F3A5F"/><w:sz w:val="${sz}"/></w:rPr></w:style>`;
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ${NS}><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial" w:eastAsia="Arial"/><w:sz w:val="22"/><w:lang w:val="es-ES"/></w:rPr></w:rPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>${estilo('Title', 'Title', '', 44, null)}${H.map(([n, sz]) => estilo('Heading' + n, 'heading ' + n, '', sz, n - 1)).join('')}</w:styles>`;
+  const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${NS}><w:body>${paras.map(para).join('')}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1417" w:right="1417" w:bottom="1417" w:left="1417" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+  return zipStore([
+    {name:'[Content_Types].xml', data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>'},
+    {name:'_rels/.rels', data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>'},
+    {name:'word/_rels/document.xml.rels', data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'},
+    {name:'word/styles.xml', data:styles}, {name:'word/document.xml', data:doc}
+  ], 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+}
+const nivH = n => 'Heading' + Math.min(5, Math.max(1, n));
+$('expTransDocx').onclick = () => { if(!P.trans.length) return toast('No hay transcripciones'); try{ const k = []; P.trans.forEach((t,i) => { k.push({t:version() === 'anon' ? t.id : t.nombre, st:'Heading1', pb:i > 0}); t.segs.forEach(s => k.push({after:120, runs:[{t:`${hms(s.t0)}  `, f:'Consolas', s:18, c:'5D7691'}, {t:nombreHab(s.h) + ': ', b:true}, {t:textoSeg(s)}]})); }); dl(base() + '_transcripciones_' + version() + '.docx', docxBlob(k)); }catch(e){ toast('No se pudo crear el Word: ' + e.message); } };
 const guid = () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, () => (Math.random() * 16 | 0).toString(16))).toUpperCase();
 function codesXml(A, map){ const rec = ns => ns.map(n => { const g = guid(); map[n.id] = g; return `<Code guid="${g}" name="${xesc(n.nombre)}" isCodable="true"><Description>${xesc(n.definicion || '')}</Description>${rec(n.hijos)}</Code>`; }).join(''); return `<Codes>${rec(A.codigos)}</Codes>`; }
 $('expQdc').onclick = () => { const A = P.arboles.find(a => a.id === $('selExp').value); if(!A) return toast('Genera antes un árbol'); dl(base() + '_codigos.qdc', `<?xml version="1.0" encoding="utf-8"?>\n<CodeBook xmlns="urn:QDA-XML:codebook:1.0" origin="CualitativIA">${codesXml(A, {})}</CodeBook>`, 'application/xml'); };
-$('expQdpx').onclick = async () => {
+$('expQdpx').onclick = () => {
   const A = P.arboles.find(a => a.id === $('selExp').value); if(!A) return toast('Genera antes un árbol');
-  try{ await cargaLib(['https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js']); const z = new JSZip(), U = guid(), map = {}, codes = codesXml(A, map), porSeg = {};
+  try{ const arch = [], U = guid(), map = {}, codes = codesXml(A, map), porSeg = {};
     const rec = ns => ns.forEach(n => { n.segs.forEach(id => (porSeg[id] = porSeg[id] || []).push(map[n.id])); rec(n.hijos); }); rec(A.codigos);
-    const fuentes = P.trans.map(t => { const g = guid(); let txt = '', sel = ''; t.segs.forEach(s => { const pre = `${nombreHab(s.h)}: `, cuerpo = textoSeg(s), ini = [...txt].length + [...pre].length, fin = ini + [...cuerpo].length; txt += pre + cuerpo + '\n\n'; (porSeg[s.id] || []).forEach(cg => { sel += `<PlainTextSelection guid="${guid()}" name="${xesc(s.id)}" startPosition="${ini}" endPosition="${fin}" creatingUser="${U}"><Coding guid="${guid()}" creatingUser="${U}"><CodeRef targetGUID="${cg}"/></Coding></PlainTextSelection>`; }); }); z.file(`sources/${g}.txt`, txt); return `<TextSource guid="${g}" name="${xesc(version() === 'anon' ? t.id : t.nombre)}" plainTextPath="internal://${g}.txt" creatingUser="${U}">${sel}</TextSource>`; }).join('');
-    z.file('project.qde', `<?xml version="1.0" encoding="utf-8"?>\n<Project name="${xesc(P.titulo || 'Estudio')}" origin="CualitativIA" creatingUserGUID="${U}" creationDateTime="${new Date().toISOString().split('.')[0]}Z" xmlns="urn:QDA-XML:project:1.0"><Users><User guid="${U}" name="CualitativIA"/></Users><CodeBook>${codes}</CodeBook><Sources>${fuentes}</Sources></Project>`);
-    dl(base() + '_' + version() + '.qdpx', await z.generateAsync({type:'blob'})); toast('Proyecto REFI-QDA generado: ábrelo en MAXQDA con «Importar proyecto REFI-QDA»', 6000); }
-  catch(e){ toast(e.message); }
+    const fuentes = P.trans.map(t => { const g = guid(); let txt = '', sel = ''; t.segs.forEach(s => { const pre = `${nombreHab(s.h)}: `, cuerpo = textoSeg(s), ini = [...txt].length + [...pre].length, fin = ini + [...cuerpo].length; txt += pre + cuerpo + '\n\n'; (porSeg[s.id] || []).forEach(cg => { sel += `<PlainTextSelection guid="${guid()}" name="${xesc(s.id)}" startPosition="${ini}" endPosition="${fin}" creatingUser="${U}"><Coding guid="${guid()}" creatingUser="${U}"><CodeRef targetGUID="${cg}"/></Coding></PlainTextSelection>`; }); }); arch.push({name:`sources/${g}.txt`, data:txt}); return `<TextSource guid="${g}" name="${xesc(version() === 'anon' ? t.id : t.nombre)}" plainTextPath="internal://${g}.txt" creatingUser="${U}">${sel}</TextSource>`; }).join('');
+    arch.push({name:'project.qde', data:`<?xml version="1.0" encoding="utf-8"?>\n<Project name="${xesc(P.titulo || 'Estudio')}" origin="CualitativIA" creatingUserGUID="${U}" creationDateTime="${new Date().toISOString().split('.')[0]}Z" xmlns="urn:QDA-XML:project:1.0"><Users><User guid="${U}" name="CualitativIA"/></Users><CodeBook>${codes}</CodeBook><Sources>${fuentes}</Sources></Project>`});
+    dl(base() + '_' + version() + '.qdpx', zipStore(arch)); toast('Proyecto REFI-QDA generado: ábrelo en MAXQDA con «Importar proyecto REFI-QDA»', 6000); }
+  catch(e){ toast('No se pudo crear el proyecto: ' + e.message); }
 };
-$('expInf').onclick = async () => {
+$('expInf').onclick = () => {
   const A = P.arboles.find(a => a.id === $('selExp').value); if(!A) return toast('Genera antes un árbol');
-  try{ const D = await docxLib(), k = [Pd(D, P.titulo || 'Estudio', {h:D.HeadingLevel.TITLE}), Pd(D, `Árbol de códigos · ${A.nombre} · ${new Date(A.fecha).toLocaleDateString('es-ES')}`, {i:true, c:'5D7691'}), Pd(D, LENTES[A.lente]?.d || '', {i:true, s:20})];
-    const rec = ns => ns.forEach(n => { k.push(Pd(D, n.nombre, {h:[D.HeadingLevel.HEADING_1, D.HeadingLevel.HEADING_2, D.HeadingLevel.HEADING_3, D.HeadingLevel.HEADING_4, D.HeadingLevel.HEADING_5][Math.min(4, n.nivel - 1)]})); if(n.definicion) k.push(Pd(D, n.definicion, {i:true})); k.push(Pd(D, `${n.segs.length} fragmentos${n.hijos.length ? '' : ' · ' + (n.cierre || '')}`, {s:18, c:'5D7691'})); n.citas.forEach(c => { const s = segPorId(c.seg); k.push(Pd(D, `«${version() === 'anon' ? c.texto : reidentifica(c.texto)}» (${nombreHab(s?.h)}, ${c.seg})`, {ind:500, s:20})); }); rec(n.hijos); }); rec(A.codigos);
-    if((A.relaciones || []).length){ k.push(Pd(D, 'Relaciones entre códigos', {h:D.HeadingLevel.HEADING_1})); A.relaciones.forEach(r => k.push(Pd(D, `${r.de} — ${r.tipo} → ${r.a}: ${r.explicacion}`))); }
-    k.push(Pd(D, 'Propuesta generada con apoyo de IA sobre texto anonimizado y revisada por la investigadora. Las citas se han verificado literalmente contra las transcripciones.', {i:true, s:18, c:'5D7691'}));
-    dl(base() + '_informe_' + version() + '.docx', await D.Packer.toBlob(new D.Document({creator:'CualitativIA', sections:[{children:k}]}))); }
-  catch(e){ toast(e.message); }
+  try{ const todos = $('expTodos').checked, k = [{t:P.titulo || 'Estudio', st:'Title'}, {t:`Árbol de códigos · ${A.nombre} · ${new Date(A.fecha).toLocaleDateString('es-ES')}`, i:true, c:'5D7691'}, {t:LENTES[A.lente]?.d || '', i:true, s:20}];
+    const rec = ns => ns.forEach(n => { k.push({t:n.nombre, st:nivH(n.nivel)}); if(n.definicion) k.push({t:n.definicion, i:true}); k.push({t:`${n.segs.length} fragmentos${n.hijos.length ? '' : ' · ' + (n.cierre || '')}`, s:18, c:'5D7691'});
+      n.citas.forEach(c => { const s = segPorId(c.seg); k.push({t:`«${version() === 'anon' ? c.texto : reidentifica(c.texto)}» (${nombreHab(s?.h)}, ${c.seg})`, ind:500, s:20}); });
+      if(todos){ const citados = new Set(n.citas.map(c => c.seg)), resto = n.segs.filter(id => !citados.has(id)); if(resto.length){ k.push({t:`Otros fragmentos codificados (${resto.length})`, b:true, s:18, c:'5D7691', ind:500}); resto.forEach(id => { const s = segPorId(id); if(s) k.push({t:`${nombreHab(s.h)} (${id}): ${textoSeg(s)}`, ind:700, s:19, c:'3C4A5C'}); }); } }
+      rec(n.hijos); }); rec(A.codigos);
+    if((A.relaciones || []).length){ k.push({t:'Relaciones entre códigos', st:'Heading1'}); A.relaciones.forEach(r => k.push({t:`${r.de} — ${r.tipo} → ${r.a}: ${r.explicacion}`})); }
+    k.push({t:'Propuesta generada con apoyo de IA sobre texto anonimizado y revisada por la investigadora. Las citas se han verificado literalmente contra las transcripciones.', i:true, s:18, c:'5D7691'});
+    dl(base() + '_informe_' + version() + '.docx', docxBlob(k)); }
+  catch(e){ toast('No se pudo crear el informe: ' + e.message); }
 };
 $('expJson').onclick = () => { if(!confirm('La copia completa contiene datos reales (nombres y transcripciones originales). ¿Descargarla?')) return; const {_demo, ...r} = P; dl(base() + '_COPIA_CON_DATOS_REALES.json', JSON.stringify(r), 'application/json'); };
 $('expClave').onclick = () => { if(!confirm('La clave permite reidentificar a las personas. Guárdala separada de las transcripciones anonimizadas. ¿Descargarla?')) return; const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`; dl(base() + '_CLAVE_REIDENTIFICACION.csv', '\ufeff' + ['codigo;dato original;tipo', ...P.ents.filter(e => e.activo).map(e => [e.sust, e.orig, e.tipo].map(q).join(';')), ...P.participantes.filter(p => p.nombre).map(p => [p.codigo, p.nombre, 'PARTICIPANTE'].map(q).join(';'))].join('\r\n'), 'text/csv;charset=utf-8'); };
 
 /* ══════════ MIS ESTUDIOS, AJUSTES, AYUDA, EJEMPLO ══════════ */
 $('btnProy').onclick = async () => { const all = ((await tx('readonly', s => s.getAll())) || []).sort((a,b) => (b.actualizado || 0) - (a.actualizado || 0)); $('proys').innerHTML = all.length ? all.map(p => `<div style="display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--linea-2)"><div style="flex:1"><b style="font-size:14px">${esc(p.titulo || 'Sin título')}</b><div class="help" style="margin:0">${p.trans.length} transcripción(es) · ${p.arboles.length} árbol(es) · ${new Date(p.actualizado || p.creado).toLocaleString('es-ES')}</div></div><button class="btn btn-primary btn-sm" data-ab="${p.id}">Abrir</button><button class="btn btn-ghost btn-sm" data-bo="${p.id}">${ico('trash')}</button></div>`).join('') : '<p class="help">Aún no hay estudios guardados.</p>';
-  $$('#proys [data-ab]').forEach(b => b.onclick = () => { P = all.find(x => x.id === b.dataset.ab); $('mProy').classList.remove('on'); go(P.arboles.length ? 5 : P.trans.length ? 3 : 1); });
+  $$('#proys [data-ab]').forEach(b => b.onclick = () => { P = arreglaIds(all.find(x => x.id === b.dataset.ab)); $('mProy').classList.remove('on'); go(P.arboles.length ? 5 : P.trans.length ? 3 : 1); });
   $$('#proys [data-bo]').forEach(b => b.onclick = async () => { if(!confirm('¿Borrar este estudio de este navegador?')) return; await tx('readwrite', s => s.delete(b.dataset.bo)); $('btnProy').click(); });
   $('mProy').classList.add('on'); };
-$('fileJson').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if(!f) return; try{ const d = JSON.parse(await f.text()); if(!Array.isArray(d.trans)) throw new Error(); P = d; guarda(); $('mProy').classList.remove('on'); go(3); }catch(err){ toast('No es una copia de CualitativIA'); } };
-$('btnAjustes').onclick = () => { $('apiKey').value = localStorage.getItem('ia_openai_key') || ''; $('modelo').value = localStorage.getItem('cualitativia_model') || 'gpt-6-luna'; $('sinIA').checked = sinIA(); $('mAjustes').classList.add('on'); };
+$('fileJson').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if(!f) return; try{ const d = JSON.parse(await f.text()); if(!Array.isArray(d.trans)) throw new Error(); P = arreglaIds(d); guarda(); $('mProy').classList.remove('on'); go(3); }catch(err){ toast('No es una copia de CualitativIA'); } };
+$('btnAjustes').onclick = () => { sincAjustes(); $('apiKey').value = localStorage.getItem('ia_openai_key') || ''; $('modelo').value = localStorage.getItem('cualitativia_model') || 'gpt-6-luna'; $('sinIA').checked = sinIA(); $('mAjustes').classList.add('on'); };
 $('apiKey').oninput = () => localStorage.setItem('ia_openai_key', $('apiKey').value.trim());
 $('modelo').onchange = () => localStorage.setItem('cualitativia_model', $('modelo').value);
 $('sinIA').onchange = () => { localStorage.setItem('cualitativia_sinia', $('sinIA').checked ? '1' : '0'); if(step === 5) pintaAnalisis(); };
 $('btnEye').onclick = () => { const k = $('apiKey'); k.type = k.type === 'password' ? 'text' : 'password'; };
-const GLOS = [['Transcripción local','Chrome reconoce la voz en tu ordenador con processLocally = true: si el idioma no está instalado, no se usa la nube. Va al ritmo de la grabación; una hora de audio tarda una hora.'],['Quién habla','El reconocimiento de voz no distingue voces. La app corta en turnos por las pausas y tú asignas cada turno, escuchando el fragmento si lo necesitas.'],['Anonimizar','Sustituir nombres, lugares, centros, fechas o contactos por códigos ([NOMBRE_1], [CENTRO_2], P1…). La correspondencia (clave) se queda en tu ordenador.'],['Qué sale a OpenAI','Solo si pides el análisis automático, y solo el texto anonimizado y los objetivos, tras enseñártelo y volver a buscar datos personales. La página no puede conectar con ningún otro servidor: lo impide su política de seguridad (Content-Security-Policy).'],['Profundidad desigual','Cada rama se subdivide solo mientras haya subtemas con evidencia propia; cuando las ideas se agotan, se detiene y lo indica. Por eso unas ramas tienen un nivel y otras cuatro.'],['Interpretaciones','La misma información leída de varias maneras: temática, relacional o desde un marco teórico. Compáralas y quédate con lo que te sirva.'],['Citas verificadas','La IA solo puede citar fragmentos de segmentos reales. La app comprueba que cada cita aparece literalmente en su segmento y descarta las que no.'],['MAXQDA','Exporta el libro de códigos y el proyecto en el estándar REFI-QDA (MAXQDA, ATLAS.ti, NVivo), y las transcripciones con marcas de tiempo #hh:mm:ss-0#.'],['Métodos mixtos','Matrices de códigos por participante y por atributo, calculadas en tu ordenador y exportables a SPSS o R.']];
+const GLOS = [['Transcripción privada','La app transcribe en tu navegador con Whisper (da el texto con tiempos por palabra), separa las voces, localiza nombres y datos personales, corta esas zonas del audio, parte el resto en un trozo por turno y envía los trozos a OpenAI en orden aleatorio, con nombre de fichero aleatorio y sin contexto. El texto se recompone aquí. El audio completo no sale del ordenador; ningún detector es infalible.'],['Turnos dudosos','La app marca en ámbar los turnos con baja confianza del modelo, que difieren mucho de la transcripción local, que parecen repetirse o inventarse, con voz poco clara, o donde se cortó un dato personal ([REDACTADO]). Conviene escucharlos y corregirlos primero; al editar uno, deja de estar marcado.'],['Solo Chrome','Chrome reconoce la voz en tu ordenador con processLocally = true: si el idioma no está instalado, no se usa la nube y no se envía nada a nadie. Va al ritmo de la grabación (una hora de audio tarda una hora), solo un fichero a la vez, y es menos precisa; no reconoce voces.'],['Quién habla','Con la transcripción privada, las voces vienen separadas y solo tienes que decir a quién corresponde cada una (la separación se puede equivocar: escucha una muestra). Con «Solo Chrome» no se distinguen voces: la app corta por pausas y asignas cada turno a mano.'],['Anonimizar','Sustituir nombres, lugares, centros, fechas o contactos por códigos ([NOMBRE_1], [CENTRO_2], P1…). La correspondencia (clave) se queda en tu ordenador.'],['Qué sale a OpenAI','Solo si pides el análisis automático, y solo el texto anonimizado y los objetivos, tras enseñártelo y volver a buscar datos personales. La página no puede conectar con ningún otro servidor: lo impide su política de seguridad (Content-Security-Policy).'],['Profundidad desigual','La profundidad máxima es un tope. Cada rama se subdivide solo mientras haya subtemas con evidencia propia; cuando las ideas se agotan, se detiene y lo indica. Con pocas entrevistas es normal quedarse en 1-2 niveles. Con ✦ puedes pedir subcódigos en cualquier código, y «Todos los fragmentos codificados» muestra el material completo de cada código, no solo las citas destacadas.'],['Interpretaciones','La misma información leída de varias maneras: temática, relacional o desde un marco teórico. Compáralas y quédate con lo que te sirva.'],['Citas verificadas','La IA solo puede citar fragmentos de segmentos reales. La app comprueba que cada cita aparece literalmente en su segmento y descarta las que no.'],['MAXQDA','Exporta el libro de códigos y el proyecto en el estándar REFI-QDA (MAXQDA, ATLAS.ti, NVivo), y las transcripciones con marcas de tiempo #hh:mm:ss-0#.'],['Métodos mixtos','Matrices de códigos por participante y por atributo, calculadas en tu ordenador y exportables a SPSS o R.']];
 $('glos').innerHTML = GLOS.map(g => `<div><b>${esc(g[0])}</b><span>${esc(g[1])}</span></div>`).join('');
 $('btnHelp').onclick = () => $('mHelp').classList.add('on');
 $$('.modal').forEach(m => m.addEventListener('click', e => { if(e.target === m || e.target.hasAttribute('data-close')) m.classList.remove('on'); }));
