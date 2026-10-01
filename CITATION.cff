@@ -9,6 +9,7 @@ authors:
     orcid: "https://orcid.org/0000-0002-5519-4573"
   - family-names: "Lillo Navarro"
     given-names: "María del Carmen"
+    affiliation: "Universidad Miguel Hernández de Elche"
     orcid: "https://orcid.org/0000-0002-5074-8338"
 doi: "10.5281/zenodo.23077431"
 version: "1.1.0"
