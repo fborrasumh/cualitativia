@@ -62,6 +62,7 @@
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="Fernando Borrás Rocher; María del Carmen Lillo Navarro">
 <title>CualitativIA · Investigación cualitativa privada: transcribir, anonimizar y codificar</title>
 <meta name="description" content="Transcribe entrevistas y grupos focales en tu ordenador con el reconocimiento local de Chrome, anonimiza antes de usar la IA y genera árboles de códigos a varios niveles con citas literales verificadas. Exporta a MAXQDA.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -589,6 +590,7 @@ table.bp td.cell{padding:0;min-width:64px}
 .seg.dud{background:#FFF8E6;box-shadow:inset 4px 0 0 #E9A23B}.seg .okbtn{color:#0B5A4E}
 .voz{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:7px 0;border-bottom:1px solid var(--linea-2)}.voz b{min-width:70px}.voz select{padding:5px 8px;border:1.5px solid var(--linea);border-radius:8px}
 .nodo details{margin:4px 0}.nodo summary{cursor:pointer;font-size:12.5px;color:var(--acero)}
+.cu-autores{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:22px;padding-top:18px;border-top:1px solid rgba(255,255,255,.14)}.cu-autor{display:flex;gap:11px;align-items:center}.cu-autor b{display:block;color:#fff;font:700 16px var(--display);letter-spacing:-.01em}.cu-autor small{display:block;color:#9DB6CD;font-size:12.5px}.cu-av{width:42px;height:42px;border-radius:13px;background:var(--c);color:#fff;display:grid;place-items:center;font:800 14px var(--display);flex:none;box-shadow:0 10px 20px -12px var(--c)}.cu-y{font:300 24px var(--display);color:#5D7C9B}
 </style>
 </head>
 <body>
@@ -661,6 +663,7 @@ table.bp td.cell{padding:0;min-width:64px}
     <h1>Tus entrevistas, <em>en tu ordenador</em></h1>
     <p class="lede">Transcribe audio y vídeo en tu propio ordenador: separa las voces, localiza los nombres y los corta del audio antes de enviar a OpenAI solo trozos sueltos, sin nombres (o, si lo prefieres, usa solo el reconocimiento local de Chrome, sin enviar nada). Revisa los turnos dudosos, asigna quién habla, anonimiza nombres, lugares y centros y, solo entonces, si quieres, pide a la IA árboles de códigos a varios niveles y desde varias interpretaciones, con citas literales comprobadas. Lo exportas a MAXQDA y sigues trabajando como siempre.</p>
     <div class="actions"><button class="btn btn-primary btn-big" id="btnStart" type="button"><svg class="i"><use href="#i-play"/></svg>Empezar un estudio</button><button class="btn btn-ghost btn-big" id="btnDemo" type="button"><svg class="i"><use href="#i-eye"/></svg>Ver un estudio de ejemplo</button></div>
+    <div class="cu-autores"><div class="cu-autor"><span class="cu-av" style="--c:#E4572E">FB</span><div><b>Fernando Borrás Rocher</b><small>Universidad Miguel Hernández de Elche</small></div></div><span class="cu-y">×</span><div class="cu-autor"><span class="cu-av" style="--c:#0E8C7A">ML</span><div><b>María del Carmen Lillo Navarro</b><small>Autora</small></div></div></div>
     <p class="quote">El análisis lo piensas tú; <span>la IA te enseña caminos que no habías visto.</span></p>
   </div>
   <h2 class="sec-title">Dónde va cada cosa</h2>
@@ -777,7 +780,7 @@ table.bp td.cell{padding:0;min-width:64px}
 </section>
 </main>
 
-<footer><hr><p>CualitativIA · Fernando Borrás Rocher · Universidad Miguel Hernández de Elche. Herramienta de apoyo: el análisis y sus decisiones son de la investigadora. Transcripción con el reconocimiento de voz local de Chrome; la página solo puede conectar con OpenAI, y solo con texto anonimizado tras tu confirmación.</p></footer>
+<footer><hr><p>CualitativIA · Fernando Borrás Rocher (Universidad Miguel Hernández de Elche) y María del Carmen Lillo Navarro. Herramienta de apoyo: el análisis y sus decisiones son de la investigadora. Transcripción con el reconocimiento de voz local de Chrome; la página solo puede conectar con OpenAI, y solo con texto anonimizado tras tu confirmación.</p></footer>
 <div class="bottomnav"><div class="bn-in"><button class="btn btn-ghost" id="navBack" type="button"><svg class="i"><use href="#i-left"/></svg>Atrás</button><div class="bn-hint" id="navHint"></div><button class="btn btn-primary" id="navNext" type="button"><span id="navNextTxt">Siguiente</span><svg class="i"><use href="#i-right"/></svg></button></div></div>
 <div class="modal" id="mEnvio" role="dialog" aria-modal="true" aria-labelledby="mEnT"><div class="modal-box envio"><div class="modal-head"><h2 id="mEnT">Esto es lo que saldría hacia OpenAI</h2><button type="button" data-close>Cerrar</button></div><div class="modal-body"><div id="envioInfo"></div><pre id="envioTxt"></pre><label style="display:flex;gap:8px;font-size:14px;margin:12px 0"><input type="checkbox" id="envioOk"> He revisado el texto y confirmo que puede salir de mi ordenador anonimizado.</label><div class="actions"><button class="btn btn-primary" id="envioSi" type="button" disabled>Enviar y analizar</button><button class="btn btn-ghost" data-close type="button">Cancelar</button></div></div></div></div>
 <div class="modal" id="mProy" role="dialog" aria-modal="true" aria-labelledby="mPrT"><div class="modal-box"><div class="modal-head"><h2 id="mPrT">Mis estudios</h2><button type="button" data-close>Cerrar</button></div><div class="modal-body"><div id="proys"></div><div class="actions" style="margin-top:12px"><label class="btn btn-ghost btn-sm" for="fileJson" style="cursor:pointer"><svg class="i"><use href="#i-upload"/></svg>Abrir una copia (.json)</label><input type="file" id="fileJson" accept=".json" hidden></div></div></div></div>
@@ -788,7 +791,7 @@ table.bp td.cell{padding:0;min-width:64px}
 "use strict";
 /* ══════════════════════════════════════════════════════════
    CualitativIA · investigación cualitativa privada
-   Fernando Borrás Rocher · Universidad Miguel Hernández de Elche
+   Fernando Borrás Rocher (Universidad Miguel Hernández de Elche) y María del Carmen Lillo Navarro
    ══════════════════════════════════════════════════════════ */
 const $ = id => document.getElementById(id), $$ = s => [...document.querySelectorAll(s)];
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
