@@ -4,7 +4,7 @@
 
 Aplicación web de un solo fichero (`index.html`), sin servidor ni instalación. Pensada para investigación en ciencias de la salud y sociales.
 
-> Fernando Borrás Rocher · Universidad Miguel Hernández de Elche
+> Fernando Borrás Rocher (Universidad Miguel Hernández de Elche) y María del Carmen Lillo Navarro
 
 ---
 
@@ -120,10 +120,14 @@ Probado con Playwright en Chromium: borrado de entrevistas, ids únicos, panel d
 
 ## Cómo citar
 
-> Borrás Rocher, F. (2026). *CualitativIA: investigación cualitativa privada* [Software]. Universidad Miguel Hernández de Elche. https://doi.org/XXXX (DOI de Zenodo por asignar)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23077431.svg)](https://doi.org/10.5281/zenodo.23077431)
 
-ORCID: [0000-0002-5519-4573](https://orcid.org/0000-0002-5519-4573)
+> Borrás Rocher, F. y Lillo Navarro, M. C. (2026). *CualitativIA: investigación cualitativa privada* (v1.1.0) [Software]. Universidad Miguel Hernández de Elche. https://doi.org/10.5281/zenodo.23077431
+
+El DOI de concepto apunta siempre a la última versión.
+
+ORCID: Fernando Borrás Rocher [0000-0002-5519-4573](https://orcid.org/0000-0002-5519-4573) · María del Carmen Lillo Navarro [0000-0002-5074-8338](https://orcid.org/0000-0002-5074-8338)
 
 ## Licencia
 
-Por definir.
+MIT. Véase [LICENSE](LICENSE).
