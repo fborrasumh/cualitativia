@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src https://api.openai.com; worker-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+
+<script id="gpt6-luna-shim">
+/* gpt-6-luna: modelo por defecto con temperatura=1 (actualización sep-2026).
+   Adapta las peticiones a la API de OpenAI para la familia gpt-6:
+   temperature=1, max_tokens -> max_completion_tokens (con margen para razonamiento)
+   y reintento automático si la API rechaza algún parámetro. */
+(function(){
+  var NEW='gpt-6-luna', OLD='gpt-4o-mini';
+  try{
+    if(!localStorage.getItem('__gpt6_luna_mig_v1')){
+      for(var i=0;i<localStorage.length;i++){
+        var k=localStorage.key(i), v=localStorage.getItem(k);
+        if(v===OLD||v==='"'+OLD+'"'){ localStorage.setItem(k, v.replace(OLD,NEW)); continue; }
+        if(v && v.length<20000 && v.charAt(0)==='{' && v.indexOf(OLD)>=0){
+          try{ var o=JSON.parse(v), ch=false;
+            for(var p in o){ if(o[p]===OLD){ o[p]=NEW; ch=true; } }
+            if(ch) localStorage.setItem(k, JSON.stringify(o));
+          }catch(e){}
+        }
+      }
+      localStorage.setItem('__gpt6_luna_mig_v1','1');
+    }
+  }catch(e){}
+  var of=window.fetch; if(!of) return;
+  function adapt(url,b){
+    if(!b || typeof b.model!=='string' || !/^gpt-6/.test(b.model)) return false;
+    b.temperature=1;
+    ['top_p','frequency_penalty','presence_penalty','logit_bias','logprobs','top_logprobs'].forEach(function(p){ delete b[p]; });
+    if(/chat\/completions/.test(url) && b.max_tokens!=null){
+      if(b.max_completion_tokens==null) b.max_completion_tokens=Math.min(128000, (+b.max_tokens||0)+6000);
+      delete b.max_tokens;
+    }
+    return true;
+  }
+  window.fetch=function(input,init){
+    var url=typeof input==='string'?input:(input&&input.url)||'';
+    if(!/api\.openai\.com\/v1\/(chat\/completions|responses)/.test(url) || !init || typeof init.body!=='string') return of.apply(this,arguments);
+    var b; try{ b=JSON.parse(init.body); }catch(e){ return of.apply(this,arguments); }
+    if(!adapt(url,b)) return of.apply(this,arguments);
+    var self=this, tries=0;
+    function go(){
+      var ini=Object.assign({},init,{body:JSON.stringify(b)});
+      return of.call(self,input,ini).then(function(r){
+        if(r.status!==400 || tries>=3) return r;
+        return r.clone().json().then(function(j){
+          var err=(j&&j.error)||{}, p=err.param, msg=String(err.message||'');
+          if(!p){ var m=msg.match(/'([a-z_]+)'/); if(m) p=m[1]; }
+          if(p && b.hasOwnProperty(p) && /unsupported|not supported|does not support|only the default/i.test(msg)){
+            delete b[p]; tries++; return go();
+          }
+          return r;
+        },function(){ return r; });
+      });
+    }
+    return go();
+  };
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CualitativIA · Investigación cualitativa privada: transcribir, anonimizar y codificar</title>
+<meta name="description" content="Transcribe entrevistas y grupos focales en tu ordenador con el reconocimiento local de Chrome, anonimiza antes de usar la IA y genera árboles de códigos a varios niveles con citas literales verificadas. Exporta a MAXQDA.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --tinta:#0F2237; --acero:#2E4B6B; --acero-claro:#7C93AC; --gris:#5D7691;
+  --papel:#F3F6FA; --blanco:#FFFFFF; --linea:#D8E0E9; --linea-2:#E8EEF4;
+  --brasa:#E4572E; --brasa-osc:#C9441F; --brasa-suave:#FDEBE4;
+  --forjado:#0E7C6B; --forjado-suave:#E0F3EE; --aviso:#8A3617;
+  --c-ctx:#1F6FB2; --c-comp:#6B4FD8; --c-rda:#0E8C7A; --c-tema:#C98200; --c-eval:#E4572E; --c-final:#2E4B6B;
+  --sombra:0 1px 0 rgba(15,34,55,.05), 0 14px 34px -22px rgba(15,34,55,.45);
+  --sombra-alta:0 2px 0 rgba(15,34,55,.04), 0 22px 50px -24px rgba(15,34,55,.55);
+  --r:14px;
+  --display:"Bricolage Grotesque",Georgia,serif;
+  --texto:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--papel);color:var(--tinta);font-family:var(--texto);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;padding-bottom:84px}
+a{color:var(--acero)}
+:focus-visible{outline:3px solid var(--brasa);outline-offset:2px;border-radius:6px}
+.hidden{display:none!important}
+svg.i{width:1.15em;height:1.15em;vertical-align:-.2em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+code{font-family:var(--mono);font-size:.85em;background:var(--linea-2);padding:1px 5px;border-radius:5px}
+
+/* Barra superior */
+.topbar{position:sticky;top:0;z-index:40;background:var(--tinta);color:#EAF1F7;box-shadow:0 6px 24px -14px rgba(0,0,0,.6)}
+.tb-in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:14px}
+.logo{background:none;border:0;color:#fff;font-family:var(--display);font-weight:800;font-size:24px;letter-spacing:-.03em;cursor:pointer;padding:2px 4px;display:flex;align-items:center;gap:8px}
+.logo em{font-style:normal;color:var(--brasa)}
+.logo .anv{width:30px;height:30px;border-radius:9px;background:var(--brasa);display:grid;place-items:center;color:#fff}
+.stepper{flex:1;display:flex;align-items:center;justify-content:center;min-width:0}
+.sdot{display:flex;align-items:center;gap:7px;background:none;border:0;color:#8FA7BE;font:600 13px var(--texto);padding:6px;cursor:pointer;border-radius:10px;white-space:nowrap}
+.sdot:disabled{cursor:not-allowed;opacity:.45}
+.sdot .n{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;border:2px solid #3E5C7D;font-size:12px;color:#A9C0D4;transition:all .2s}
+.sdot .n svg{width:14px;height:14px}
+.sdot[data-state="done"] .n{background:var(--forjado);border-color:var(--forjado);color:#fff}
+.sdot[data-state="now"]{color:#fff}
+.sdot[data-state="now"] .n{background:var(--brasa);border-color:var(--brasa);color:#fff;box-shadow:0 0 0 4px rgba(228,87,46,.25)}
+.sdot:not(:disabled):hover{background:rgba(255,255,255,.06)}
+.sline{flex:0 1 26px;height:2px;background:#2F4A68;min-width:6px}
+.sline.on{background:var(--forjado)}
+.tb-tools{display:flex;gap:6px}
+.tb-btn{background:transparent;border:1px solid #3E5C7D;color:#C9D8E6;border-radius:9px;padding:6px 10px;font:600 13px var(--texto);cursor:pointer;display:flex;align-items:center;gap:6px}
+.tb-btn:hover{border-color:var(--brasa);color:#fff}
+.progress{height:4px;background:#1E3550}
+.progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--brasa),#F59E0B);transition:width .4s}
+@media(max-width:960px){.sdot .lbl{display:none}.sdot[data-state="now"] .lbl{display:inline}}
+@media(max-width:720px){
+  .tb-in{flex-wrap:wrap;gap:8px}
+  .stepper{order:3;flex-basis:100%;justify-content:space-between}
+  .sdot[data-state="now"] .lbl{display:none}
+  .tb-btn .lbl{display:none}
+}
+
+/* Pantallas */
+main{max-width:1180px;margin:0 auto;padding:26px 16px 40px}
+.screen{display:none}
+.screen.on{display:block}
+@media(prefers-reduced-motion:no-preference){.screen.on{animation:rise .35s cubic-bezier(.2,.7,.3,1) both}@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}}
+.sh{display:flex;gap:18px;align-items:flex-start;margin:4px 0 22px}
+.sh-ico{width:64px;height:64px;border-radius:18px;background:var(--c,var(--brasa));color:#fff;display:grid;place-items:center;flex:none;box-shadow:0 12px 24px -14px var(--c,var(--brasa))}
+.sh-ico svg{width:32px;height:32px}
+.sh-step{font:600 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--acero-claro);margin:4px 0}
+.sh h2{font-family:var(--display);font-weight:800;font-size:clamp(26px,3.6vw,38px);letter-spacing:-.025em;line-height:1.05;margin:0 0 6px}
+.sh-lede{margin:0;color:var(--gris);font-size:16.5px;max-width:70ch}
+@media(max-width:600px){.sh-ico{width:48px;height:48px;border-radius:14px}.sh-ico svg{width:24px;height:24px}}
+
+.card{background:var(--blanco);border:1px solid var(--linea);border-radius:var(--r);box-shadow:var(--sombra);padding:20px;margin-bottom:18px}
+.card h3{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.01em;margin:0 0 4px;display:flex;align-items:center;gap:9px}
+.card h3 .num{width:26px;height:26px;border-radius:8px;background:var(--tinta);color:#fff;font:700 13px var(--mono);display:grid;place-items:center}
+.card .sub{margin:0 0 14px;color:var(--gris);font-size:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.cols{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:20px;align-items:start}
+.sticky{position:sticky;top:96px}
+@media(max-width:900px){.cols{grid-template-columns:1fr}.sticky{position:static}}
+@media(max-width:640px){.grid2{grid-template-columns:1fr}}
+
+label,.lab{display:block;font-size:13.5px;font-weight:600;margin:0 0 6px;color:var(--acero)}
+label small,.lab small{font-weight:500;color:var(--acero-claro)}
+input[type=text],input[type=password],input[type=number],textarea,select{width:100%;padding:11px 13px;border:1.5px solid var(--linea);border-radius:10px;font-family:var(--texto);font-size:15px;color:var(--tinta);background:#fff;transition:border-color .15s,box-shadow .15s}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--acero-claro);box-shadow:0 0 0 4px rgba(124,147,172,.18)}
+input.bad{border-color:var(--brasa);box-shadow:0 0 0 4px rgba(228,87,46,.15)}
+textarea{resize:vertical;min-height:96px;line-height:1.5}
+input::placeholder,textarea::placeholder{color:#9DB0C2}
+.field{margin-bottom:16px}
+.help{font-size:12.8px;color:var(--gris);margin:6px 0 0}
+.help b{color:var(--acero)}
+
+button{font-family:var(--texto);cursor:pointer}
+.btn{display:inline-flex;align-items:center;gap:8px;border-radius:11px;font-weight:600;font-size:15px;border:1.5px solid transparent;padding:11px 18px;transition:transform .08s,background .15s,border-color .15s;text-decoration:none;line-height:1.2}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--brasa);color:#fff;box-shadow:0 8px 18px -10px var(--brasa)}
+.btn-primary:hover{background:var(--brasa-osc)}
+.btn-big{font-size:17px;padding:14px 24px;border-radius:13px}
+.btn-dark{background:var(--tinta);color:#fff}
+.btn-dark:hover{background:#1c3656}
+.btn-ghost{background:#fff;border-color:var(--linea);color:var(--acero)}
+.btn-ghost:hover{border-color:var(--acero-claro);background:#F7FAFC}
+.btn-ok{background:var(--forjado);color:#fff}
+.btn-ok:hover{background:#0b6457}
+.btn-word{background:#2B579A;color:#fff}
+.btn-word:hover{background:#1e3f7a}
+.btn-sm{padding:7px 12px;font-size:13.5px;border-radius:9px}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:#fff;border:1.5px solid var(--linea);border-radius:999px;padding:7px 13px;font-size:13.5px;color:var(--acero);cursor:pointer;display:inline-flex;align-items:center;gap:6px;line-height:1.25;text-align:left}
+.chip:hover{border-color:var(--brasa);color:var(--brasa)}
+.chip[aria-pressed="true"]{background:var(--tinta);border-color:var(--tinta);color:#fff}
+.chip.mini-ex{font-size:12.5px;padding:4px 10px;border-style:dashed}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1.5px solid var(--linea);background:#fff;border-radius:9px;padding:7px 11px;font-size:13.5px;font-weight:600;color:var(--acero)}
+.seg button:hover{border-color:var(--acero-claro)}
+.seg button[aria-pressed="true"]{background:var(--tinta);border-color:var(--tinta);color:#fff}
+
+.meto{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+.meto button{text-align:left;background:#fff;border:1.5px solid var(--linea);border-radius:12px;padding:10px 12px;color:var(--tinta)}
+.meto button b{display:block;font-size:14px}
+.meto button span{display:block;font-size:12.3px;color:var(--gris);line-height:1.35;margin-top:2px}
+.meto button:hover{border-color:var(--acero-claro)}
+.meto button[aria-pressed="true"]{border-color:var(--tinta);box-shadow:0 0 0 2px var(--tinta);background:var(--papel)}
+
+.tip{display:flex;gap:12px;background:#FFF8E6;border:1px solid #F3DDA0;border-radius:12px;padding:13px 15px;font-size:14px;color:#6B4E00;margin-bottom:18px}
+.tip svg{width:22px;height:22px;color:#C98200;flex:none;margin-top:1px}
+.tip strong{color:#523B00}
+.aviso{background:var(--brasa-suave);border:1px solid #F3C7B5;border-radius:12px;padding:13px 15px;font-size:14px;color:var(--aviso);margin-bottom:16px}
+.okbox{background:var(--forjado-suave);border:1px solid #A9DCCF;border-radius:12px;padding:13px 15px;font-size:14px;color:#0B5A4E;margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+
+/* Inicio */
+.hero{background:var(--tinta);color:#EAF1F7;border-radius:22px;padding:40px 36px;position:relative;overflow:hidden;margin-bottom:26px;box-shadow:var(--sombra-alta)}
+.hero::before{content:"";position:absolute;right:-80px;top:-80px;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(228,87,46,.55),transparent 65%)}
+.hero::after{content:"";position:absolute;left:30%;bottom:-140px;width:420px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(14,140,122,.35),transparent 65%)}
+.hero>*{position:relative;z-index:1}
+@media(max-width:600px){.hero{padding:28px 20px;border-radius:18px}}
+.eyebrow{font:600 11.5px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:#8FA7BE;margin:0 0 14px}
+.hero h1{font-family:var(--display);font-weight:800;font-size:clamp(34px,5.4vw,58px);line-height:.98;letter-spacing:-.035em;margin:0 0 16px;max-width:17ch}
+.hero h1 em{font-style:normal;color:var(--brasa)}
+.hero p.lede{max-width:62ch;font-size:18px;color:#C3D3E2;margin:0 0 24px}
+.hero .actions .btn-ghost{background:transparent;color:#fff;border-color:#4A6787}
+.hero .actions .btn-ghost:hover{border-color:#fff}
+.draft{margin-top:18px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:14.5px}
+.sec-title{font-family:var(--display);font-weight:800;font-size:24px;letter-spacing:-.02em;margin:34px 0 6px}
+.sec-sub{color:var(--gris);margin:0 0 16px}
+.journey{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.jstop{background:#fff;border:1px solid var(--linea);border-radius:14px;padding:16px;position:relative}
+.jstop .ji{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#fff;background:var(--c);margin-bottom:10px}
+.jstop .ji svg{width:20px;height:20px}
+.jstop b{display:block;font-size:15px;margin-bottom:2px}
+.jstop span{display:block;font-size:13px;color:var(--gris);line-height:1.45}
+.jstop .jn{position:absolute;top:12px;right:14px;font:700 12px var(--mono);color:var(--acero-claro)}
+@media(max-width:900px){.journey{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.journey{grid-template-columns:1fr}}
+
+.parts{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.part{display:flex;gap:12px;align-items:flex-start;background:#fff;border:1px solid var(--linea);border-radius:12px;padding:12px 14px}
+.part .pi{width:34px;height:34px;border-radius:10px;background:color-mix(in srgb,var(--c) 14%,#fff);color:var(--c);display:grid;place-items:center;flex:none}
+.part b{display:block;font-size:14.5px}
+.part span{display:block;font-size:12.8px;color:var(--gris);line-height:1.4}
+
+.examples{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.excard{background:#fff;border:1px solid var(--linea);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--sombra);position:relative;overflow:hidden;text-align:left;font:inherit;color:inherit;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.excard:hover{transform:translateY(-3px);box-shadow:var(--sombra-alta)}
+.excard::before{content:"";position:absolute;left:0;top:0;right:0;height:5px;background:var(--c)}
+.excard .emo{font-size:32px;line-height:1}
+.excard .area{font:700 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--acero-claro)}
+.excard b{font-family:var(--display);font-size:18px;letter-spacing:-.01em;line-height:1.15}
+.excard p{margin:0;font-size:13.5px;color:var(--gris);flex:1}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--c);background:color-mix(in srgb,var(--c) 12%,#fff);border-radius:999px;padding:3px 9px;align-self:flex-start}
+
+/* Clave */
+.keyrow{display:flex;gap:8px}
+.keyrow input{flex:1;font-family:var(--mono);font-size:14px}
+.eye{width:46px;flex:none;border:1.5px solid var(--linea);background:#fff;border-radius:10px;color:var(--acero);display:grid;place-items:center}
+.light{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:var(--papel);margin-top:14px;font-size:14.5px;font-weight:600}
+.light .bulbo{width:14px;height:14px;border-radius:50%;background:#B8C5D3;box-shadow:0 0 0 4px rgba(184,197,211,.3);flex:none}
+.light[data-s="ok"] .bulbo{background:#16A34A;box-shadow:0 0 0 4px rgba(22,163,74,.22)}
+.light[data-s="err"] .bulbo{background:var(--brasa);box-shadow:0 0 0 4px rgba(228,87,46,.22)}
+.light[data-s="wait"] .bulbo{background:#F59E0B;box-shadow:0 0 0 4px rgba(245,158,11,.25)}
+.olsteps{list-style:none;padding:0;margin:0;counter-reset:o;display:flex;flex-direction:column;gap:12px}
+.olsteps li{counter-increment:o;display:flex;gap:12px;font-size:14.5px;align-items:flex-start}
+.olsteps li::before{content:counter(o);width:28px;height:28px;border-radius:50%;background:var(--brasa-suave);color:var(--brasa);font:700 13px var(--mono);display:grid;place-items:center;flex:none}
+
+/* Acordeones */
+.acc{background:#fff;border:1px solid var(--linea);border-radius:var(--r);margin-bottom:12px;box-shadow:var(--sombra);overflow:hidden}
+.acc>summary{list-style:none;cursor:pointer;padding:15px 18px;display:flex;align-items:center;gap:12px}
+.acc>summary::-webkit-details-marker{display:none}
+.acc>summary .ai{width:36px;height:36px;border-radius:10px;background:var(--papel);color:var(--acero);display:grid;place-items:center;flex:none}
+.acc[open]>summary .ai{background:var(--tinta);color:#fff}
+.acc>summary b{font-family:var(--display);font-size:17px;display:block}
+.acc>summary small{display:block;color:var(--gris);font-size:13px}
+.acc>summary .chev{margin-left:auto;transition:transform .2s;color:var(--acero-claro)}
+.acc[open]>summary .chev{transform:rotate(180deg)}
+.acc .inner{padding:4px 18px 18px;border-top:1px solid var(--linea-2)}
+.acc .inner>*:first-child{margin-top:14px}
+.prompt-ta{font-family:var(--mono);font-size:12.3px;min-height:130px;background:#FBFDFE}
+
+/* Resumen lateral */
+.sum h3{margin-bottom:10px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.stat{background:var(--papel);border-radius:12px;padding:10px 12px}
+.stat b{display:block;font:800 24px var(--display);letter-spacing:-.02em;line-height:1.1}
+.stat span{font-size:12.3px;color:var(--gris)}
+.checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.checks li{display:flex;gap:9px;align-items:center;color:var(--gris)}
+.checks li .ck{width:20px;height:20px;border-radius:50%;border:2px solid var(--linea);display:grid;place-items:center;flex:none}
+.checks li.on{color:var(--tinta)}
+.checks li.on .ck{background:var(--forjado);border-color:var(--forjado);color:#fff}
+.checks li .ck svg{width:12px;height:12px}
+.docname{margin-top:14px;padding:11px 13px;border-radius:11px;background:var(--tinta);color:#C3D3E2;font-size:13.5px}
+.docname b{color:#fff}
+
+/* Generación */
+.agents{display:flex;flex-direction:column;gap:10px}
+.agent{background:#fff;border:1px solid var(--linea);border-radius:var(--r);box-shadow:var(--sombra);overflow:hidden;transition:border-color .2s}
+.agent-h{display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer}
+.agent .ai{width:42px;height:42px;border-radius:12px;background:color-mix(in srgb,var(--c) 14%,#fff);color:var(--c);display:grid;place-items:center;flex:none;transition:all .2s}
+.agent .ai svg{width:20px;height:20px}
+.agent-t{flex:1;min-width:0}
+.agent-t b{display:block;font-family:var(--display);font-size:16.5px}
+.agent-t span{display:block;font-size:13px;color:var(--gris)}
+.pill{font-size:12.5px;font-weight:700;border-radius:999px;padding:4px 10px;background:var(--linea-2);color:var(--gris);white-space:nowrap}
+.agent[data-s="run"]{border-color:#F59E0B}
+.agent[data-s="run"] .ai{background:var(--c);color:#fff;animation:pulse 1s infinite alternate}
+.agent[data-s="run"] .pill{background:#FFF1D6;color:#8A5A00}
+.agent[data-s="ok"] .ai{background:var(--c);color:#fff}
+.agent[data-s="ok"] .pill{background:var(--forjado-suave);color:var(--forjado)}
+.agent[data-s="err"]{border-color:var(--brasa)}
+.agent[data-s="err"] .pill{background:var(--brasa-suave);color:var(--brasa)}
+.agent-b{display:none;padding:4px 18px 16px 72px;font-size:14px;border-top:1px solid var(--linea-2);background:#FBFDFE}
+.agent.open .agent-b{display:block}
+@media(max-width:600px){.agent-b{padding-left:18px}}
+@keyframes pulse{from{transform:scale(1);box-shadow:0 0 0 0 rgba(228,87,46,.5)}to{transform:scale(1.06);box-shadow:0 0 0 10px rgba(228,87,46,0)}}
+.forging{display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:14px;background:var(--tinta);color:#fff;margin-bottom:16px}
+.forging .spark{width:44px;height:44px;border-radius:12px;background:var(--brasa);display:grid;place-items:center;flex:none;animation:pulse 1s infinite alternate}
+.forging.done .spark{background:var(--forjado);animation:none}
+.forging.err .spark{animation:none}
+.forging b{font-family:var(--display);font-size:18px;display:block}
+.forging span{font-size:14px;color:#C3D3E2}
+.mini-list{margin:10px 0 0;padding:0;list-style:none}
+.mini-list li{padding:5px 0;border-bottom:1px solid var(--linea-2)}
+.mini-list li:last-child{border-bottom:0}
+.code{display:inline-block;font:700 11px var(--mono);border-radius:5px;padding:1px 6px;margin-right:6px;background:var(--linea-2);color:var(--acero)}
+
+/* Guía */
+.res-head{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.res-head h2{font-family:var(--display);font-weight:800;font-size:clamp(24px,3vw,32px);letter-spacing:-.02em;margin:0;flex:1;min-width:240px;line-height:1.1}
+.doc{background:#fff;border:1px solid var(--linea);border-radius:18px;box-shadow:var(--sombra-alta);padding:40px 44px;max-width:900px;margin:0 auto}
+@media(max-width:700px){.doc{padding:22px 16px}}
+.doc-h{border-bottom:3px solid var(--tinta);padding-bottom:18px;margin-bottom:26px}
+.doc-kind{font:600 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--brasa);margin:0 0 6px}
+.doc-h h1{font-family:var(--display);font-weight:800;font-size:clamp(26px,3.4vw,36px);letter-spacing:-.025em;line-height:1.05;margin:0 0 12px}
+.meta{display:flex;flex-wrap:wrap;gap:6px}
+.meta span{font-size:12.8px;font-weight:600;background:var(--papel);color:var(--acero);border-radius:999px;padding:4px 11px}
+.dsec{margin-bottom:28px}
+.dsec h2{font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:-.01em;margin:0 0 10px;display:flex;align-items:center;gap:10px}
+.dsec h2 .num{width:28px;height:28px;border-radius:8px;background:var(--tinta);color:#fff;font:700 13px var(--mono);display:grid;place-items:center;flex:none}
+.dsec p{margin:0 0 10px;max-width:75ch}
+.sublab{font-size:13px;font-weight:700;color:var(--acero-claro);margin:14px 0 6px}
+.row{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--linea-2);font-size:14.5px;align-items:flex-start}
+.row:last-child{border-bottom:0}
+.row .code{margin-top:2px;flex:none}
+.code.cg{background:#E6F0FA;color:var(--c-ctx)}
+.code.ce{background:#EEEAFB;color:var(--c-comp)}
+.code.bl{background:var(--forjado-suave);color:var(--forjado)}
+.code.tm{background:var(--tinta);color:#fff}
+.row .hrs{margin-left:auto;font-size:12.5px;color:var(--gris);white-space:nowrap}
+.blk{font-weight:700;margin:16px 0 4px;display:flex;gap:8px;align-items:baseline}
+.blk small{font-weight:500;color:var(--gris)}
+.tbl-wrap{overflow-x:auto}
+table.t{width:100%;border-collapse:collapse;font-size:14px}
+table.t th{background:var(--tinta);color:#fff;text-align:left;padding:9px 11px;font-size:12.5px;font-weight:700}
+table.t td{padding:9px 11px;border-bottom:1px solid var(--linea-2);vertical-align:top}
+table.t tr:nth-child(even) td{background:#FAFCFE}
+.peso{font-weight:800;color:var(--brasa);white-space:nowrap}
+.note{margin-top:12px;padding:11px 14px;background:var(--papel);border-left:4px solid var(--forjado);border-radius:8px;font-size:14px}
+.demo-flag{background:#FFF8E6;border:1px solid #F3DDA0;color:#6B4E00;border-radius:12px;padding:11px 15px;font-size:14px;margin:0 auto 16px;max-width:900px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.demo-flag svg{color:#C98200}
+
+/* Navegación inferior */
+.bottomnav{position:fixed;left:0;right:0;bottom:0;z-index:35;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--linea)}
+.bn-in{max-width:1180px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px}
+.bn-hint{flex:1;text-align:center;font-size:14px;color:var(--gris)}
+.bn-hint b{color:var(--tinta)}
+@media(max-width:600px){.bn-hint{display:none}.bn-in{justify-content:space-between}}
+
+/* Modal */
+.modal{position:fixed;inset:0;z-index:60;background:rgba(15,34,55,.55);display:none;align-items:flex-start;justify-content:center;padding:6vh 16px;overflow:auto}
+.modal.on{display:flex}
+.modal-box{background:#fff;border-radius:18px;max-width:760px;width:100%;box-shadow:var(--sombra-alta);overflow:hidden}
+.modal-head{display:flex;align-items:center;gap:12px;padding:16px 20px;background:var(--tinta);color:#fff}
+.modal-head h2{font-family:var(--display);font-size:22px;margin:0;flex:1}
+.modal-head button{background:transparent;border:1px solid #4A6787;color:#fff;border-radius:9px;padding:6px 10px}
+.modal-body{padding:18px 20px 22px}
+.glos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:600px){.glos{grid-template-columns:1fr}}
+.glos div{background:var(--papel);border-radius:12px;padding:12px 14px}
+.glos b{display:block;font-family:var(--display);font-size:16px;margin-bottom:2px}
+.glos span{font-size:13.8px;color:var(--acero)}
+.hist{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--linea);border-radius:12px;margin-bottom:8px}
+.hist-t{flex:1;min-width:0;cursor:pointer}
+.hist-t b{display:block;font-size:15px}
+.hist-t span{font-size:12.8px;color:var(--gris)}
+.hist:hover{border-color:var(--acero-claro)}
+.iconbtn{width:34px;height:34px;border-radius:9px;border:1.5px solid var(--linea);background:#fff;color:var(--acero);display:grid;place-items:center;padding:0}
+.iconbtn:hover{border-color:var(--brasa);color:var(--brasa)}
+.empty{text-align:center;color:var(--gris);padding:30px 10px}
+
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);background:var(--tinta);color:#fff;padding:11px 18px;border-radius:12px;font-size:14.5px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s;z-index:70;max-width:90vw;text-align:center;box-shadow:var(--sombra-alta)}
+.toast.on{opacity:1;transform:translateX(-50%)}
+footer{max-width:1180px;margin:0 auto;padding:0 16px 30px;font-size:13px;color:#6E8299}
+footer hr{border:0;border-top:1px solid var(--linea);margin:0 0 14px}
+
+@media print{
+  body{background:#fff;padding:0}
+  .topbar,.bottomnav,.res-head,.demo-flag,.okbox,footer,.toast,.modal{display:none!important}
+  main{padding:0;max-width:none}
+  .screen{display:none!important}
+  
+  .doc{box-shadow:none;border:0;padding:0;max-width:none}
+  .dsec{break-inside:avoid-page}
+  table.t th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+/* ══ v2 ══ */
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:640px){.grid3{grid-template-columns:1fr}}
+.feats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:960px){.feats{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.feats{grid-template-columns:1fr}}
+.feat{background:#fff;border:1px solid var(--linea);border-radius:14px;padding:16px;border-top:4px solid var(--c)}
+.feat .pi{width:38px;height:38px;border-radius:11px;background:color-mix(in srgb,var(--c) 14%,#fff);color:var(--c);display:grid;place-items:center;margin-bottom:10px}
+.feat b{display:block;font-family:var(--display);font-size:17px;margin-bottom:3px}
+.feat span{display:block;font-size:13.5px;color:var(--gris);line-height:1.45}
+.importbar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:var(--tinta);color:#EAF1F7;border-radius:var(--r);padding:14px 16px;margin-bottom:18px}
+.importbar .pi{width:40px;height:40px;border-radius:11px;background:var(--brasa);display:grid;place-items:center;flex:none}
+.importbar b{display:block;font-size:15px}
+.importbar span{display:block;font-size:13.3px;color:#A9C0D4}
+.importbar .btn-dark{background:#fff;color:var(--tinta)}
+.importbar .btn-dark:hover{background:#EAF1F7}
+.inacc{border-top:1px solid var(--linea-2);margin-top:4px;padding-top:12px}
+.inacc>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--acero)}
+.inacc>summary::-webkit-details-marker{display:none}
+.inacc>summary .chev{margin-left:auto;transition:transform .2s;color:var(--acero-claro)}
+.inacc[open]>summary .chev{transform:rotate(180deg)}
+.rec{display:inline-block;font:700 11px var(--texto);background:var(--forjado-suave);color:var(--forjado);border-radius:999px;padding:2px 8px;vertical-align:2px;margin-left:4px}
+.checkgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:560px){.checkgrid{grid-template-columns:1fr}}
+.checkgrid label{display:flex;gap:9px;align-items:center;margin:0;padding:9px 11px;border-radius:10px;background:var(--papel);font-weight:500;color:var(--tinta);cursor:pointer;font-size:14px}
+.checkgrid input{width:18px;height:18px;accent-color:var(--forjado);margin:0}
+.checkgrid label:has(input:checked){background:var(--forjado-suave)}
+.drop{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;border:2px dashed var(--linea);border-radius:14px;padding:24px;cursor:pointer;color:var(--acero);margin:0;font-weight:500}
+.drop svg{width:30px;height:30px;color:var(--brasa)}
+.drop b{font-size:15px;color:var(--tinta)}
+.drop span{font-size:13px;color:var(--gris)}
+.drop.over,.drop:hover{border-color:var(--brasa);background:var(--brasa-suave)}
+
+
+
+/* ══ CualitativIA ══ */
+.zonas{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:760px){.zonas{grid-template-columns:1fr}}
+.zona{border-radius:16px;padding:14px 16px;border:2px solid}.zona.l{border-color:#9FD9C4;background:var(--forjado-suave)}.zona.n{border-color:#E9C46A;background:#FFF8E6}
+.zona h4{margin:0 0 6px;font-family:var(--display);font-size:18px}.zona ul{margin:0;padding-left:18px;font-size:14px;line-height:1.7}
+.part{display:grid;grid-template-columns:70px 1fr 1fr 1fr 34px;gap:8px;align-items:center;margin-bottom:6px}
+.part input,.part select{padding:7px 9px;border:1.5px solid var(--linea);border-radius:9px;font-size:13.5px;width:100%}
+.part .cod{font:800 14px var(--mono);text-align:center;background:var(--tinta);color:#fff;border-radius:8px;padding:7px 0}
+.fich{background:#fff;border:1px solid var(--linea);border-radius:14px;padding:12px 14px;margin-bottom:10px;box-shadow:var(--sombra)}
+.fich .h{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.fich .h b{flex:1;font-size:15px}
+.disp{font-size:12px;font-weight:800;border-radius:999px;padding:2px 9px}.disp.ok{background:var(--forjado-suave);color:var(--forjado)}.disp.ko{background:var(--brasa-suave);color:var(--brasa)}.disp.dl{background:#FFF1D6;color:#8A5A00}
+.segs{max-height:60vh;overflow:auto;border:1px solid var(--linea-2);border-radius:12px;background:#fff}
+.seg{display:grid;grid-template-columns:62px 130px 1fr 30px;gap:8px;align-items:start;padding:7px 10px;border-bottom:1px solid var(--linea-2);font-size:14px}
+.seg:hover{background:var(--papel)}.seg .tm{font:12px var(--mono);color:var(--acero-claro);padding-top:5px;cursor:pointer}.seg .tm:hover{color:var(--brasa)}
+.seg select{padding:4px 6px;border:1.5px solid var(--linea);border-radius:8px;font-size:12.5px;width:100%}.seg select.vac{border-color:#E9A23B;background:#FFF8E6}
+.seg [contenteditable]{outline:none;line-height:1.55;padding:3px 4px;border-radius:6px}.seg [contenteditable]:focus{background:#FFFBEA}
+.ent{display:grid;grid-template-columns:30px 1fr 110px 1fr 60px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--linea-2);font-size:13.5px}
+.ent input[type=text]{padding:5px 8px;border:1.5px solid var(--linea);border-radius:8px;font:13px var(--mono);width:100%}
+.ent .tp{font:800 10.5px var(--mono);text-transform:uppercase;border-radius:999px;padding:2px 8px;background:var(--linea-2);color:var(--acero);text-align:center}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:860px){.cmp{grid-template-columns:1fr}}
+.cmp pre{white-space:pre-wrap;font:13px/1.55 var(--texto);background:#fff;border:1px solid var(--linea);border-radius:12px;padding:10px 12px;max-height:340px;overflow:auto;margin:0}
+mark.pii{background:#FDE3DA;color:#7A2A12;border-radius:3px;padding:0 2px}mark.cod{background:var(--forjado-suave);color:#0B4F43;border-radius:3px;padding:0 2px}
+.lentes{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}@media(max-width:860px){.lentes{grid-template-columns:1fr}}
+.lentes label{display:block;background:#fff;border:2px solid var(--linea);border-radius:14px;padding:12px 14px;cursor:pointer}.lentes label.on{border-color:var(--brasa)}
+.lentes b{display:block;font-family:var(--display);font-size:17px}.lentes small{display:block;color:var(--gris);font-size:12.5px;margin-top:4px;line-height:1.45}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tabs button{border:1.5px solid var(--linea);background:#fff;border-radius:999px;padding:7px 14px;font-weight:700;font-size:13.5px;color:var(--acero)}.tabs button[aria-pressed="true"]{background:var(--tinta);border-color:var(--tinta);color:#fff}
+.arbol{background:#fff;border:1px solid var(--linea);border-radius:16px;padding:10px 14px;box-shadow:var(--sombra)}
+.nodo{margin-left:calc(var(--d)*22px);border-left:2px solid var(--linea-2);padding:6px 0 6px 12px}
+.nodo .t{display:flex;gap:8px;align-items:center;cursor:pointer}.nodo .t b{font-size:14.5px}.nodo .t .c{font:700 11.5px var(--mono);color:var(--gris)}
+.nodo .t .sat{font:800 10px var(--mono);border-radius:999px;padding:1px 7px;background:var(--linea-2);color:var(--gris)}
+.nodo .def{font-size:13px;color:var(--acero);margin:2px 0 4px}
+.cita{font:14px/1.55 Georgia,serif;background:var(--papel);border-left:3px solid var(--acero-claro);border-radius:6px;padding:6px 10px;margin:4px 0}.cita small{display:block;font:11.5px var(--mono);color:var(--gris);margin-top:2px}
+.rel{font-size:13.5px;padding:6px 0;border-bottom:1px dashed var(--linea-2)}
+table.mx{border-collapse:collapse;font-size:12.5px;width:100%}table.mx th,table.mx td{border:1px solid var(--linea-2);padding:5px 7px;text-align:center}table.mx th{background:var(--papel)}table.mx td.l,table.mx th.l{text-align:left}
+.envio pre{white-space:pre-wrap;font:12.5px/1.5 var(--mono);background:#0B1C2E;color:#D6E4F0;border-radius:12px;padding:12px;max-height:300px;overflow:auto}
+
+/* ══ AntiConvocatorIA ══ */
+/* ocho pasos: solo se muestra la etiqueta del paso actual */
+.tb-tools{flex:none}
+.stepper{overflow:hidden}
+.sdot .lbl{display:none}.sdot[data-state="now"] .lbl{display:inline}
+.stepper{justify-content:center;min-width:0}
+@media(max-width:720px){.sdot[data-state="now"] .lbl{display:none}.sline{flex:1 1 4px;min-width:2px}.sdot{padding:4px 2px}.sdot .n{width:26px;height:26px}}
+
+:root{--teal:#0E7C6B;--sello:#E4572E}
+.idea{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:960px){.idea{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.idea{grid-template-columns:1fr}}
+.idea div{background:#fff;border:1px solid var(--linea);border-radius:14px;padding:16px}
+.idea b{display:block;font-family:var(--display);font-size:17px;margin-bottom:4px}
+.idea span{font-size:13.8px;color:var(--gris);line-height:1.5;display:block}
+.idea .k{font:700 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--brasa);margin-bottom:8px}
+.idea div.yes{border-color:#A9DCCF;background:var(--forjado-suave)}
+.idea div.yes .k{color:var(--forjado)}
+.quote{margin:22px 0 0;font-family:var(--display);font-size:clamp(20px,2.6vw,28px);font-weight:700;letter-spacing:-.02em;color:#fff}
+.quote span{color:var(--brasa)}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:0 0 16px}
+.metric{background:#fff;border:1px solid var(--linea);border-radius:14px;padding:14px 16px;box-shadow:var(--sombra)}
+.metric-v{font:800 34px var(--display);letter-spacing:-.03em;line-height:1.05;color:var(--tinta)}
+.metric-v.good{color:var(--forjado)} .metric-v.warn{color:var(--brasa)} .metric-v.mid{color:#B7791F}
+.metric-l{font-weight:700;font-size:14px;margin-top:4px}
+.metric-n{font-size:12.8px;color:var(--gris);margin-top:4px;line-height:1.45}
+.substeps{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+.substeps span{font-size:12.5px;font-weight:600;border-radius:999px;padding:5px 11px;background:var(--linea-2);color:var(--gris)}
+.substeps span.on{background:#FFF1D6;color:#8A5A00}
+.substeps span.done{background:var(--forjado-suave);color:var(--forjado)}
+.substeps span.fail{background:var(--brasa-suave);color:var(--brasa)}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-1px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.heat{border-collapse:separate;border-spacing:3px;font-size:13px;width:100%}
+.heat th{font-size:11.5px;color:var(--gris);font-weight:700;text-align:center;padding:4px;white-space:nowrap}
+.heat th.l,.heat td.l{text-align:left}
+.heat td{text-align:center;border-radius:6px;padding:7px 4px;min-width:34px}
+.heat td.l{padding:6px 8px 6px 0;min-width:170px;font-weight:600}
+.heat td.c0{background:#F3F6FA;color:#B8C5D3}
+.heat td.p{font-weight:800}
+.aband{display:flex;flex-direction:column;gap:6px}
+.aband-row{display:grid;grid-template-columns:minmax(140px,1.2fr) 2fr minmax(150px,1fr);gap:10px;align-items:center;font-size:13.5px}
+.aband-bar{height:10px;background:var(--linea-2);border-radius:6px;overflow:hidden}
+.aband-fill{height:100%;background:var(--brasa);border-radius:6px}
+.aband-n{color:var(--gris);font-size:12.5px}
+@media(max-width:600px){.aband-row{grid-template-columns:1fr}}
+.conv{background:#FBFDFE;border:1.5px solid var(--linea);border-radius:12px;margin-bottom:8px}
+.conv>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 12px;flex-wrap:wrap}
+.conv>summary::-webkit-details-marker{display:none}
+.conv-year{font:700 13px var(--mono);background:var(--tinta);color:#fff;border-radius:7px;padding:3px 9px}
+.conv-meta{font-size:13px;color:var(--gris);flex:1}
+.conv-src{font-size:12px;color:var(--acero-claro);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.conv-body{padding:4px 12px 12px}
+.ing{margin-top:10px;display:flex;flex-direction:column;gap:4px}
+.ing div{display:flex;gap:10px;font-size:13px;justify-content:space-between;padding:6px 10px;background:var(--papel);border-radius:8px}
+.ing .ok{color:var(--forjado);font-weight:600}.ing .err{color:var(--brasa);font-weight:600}.ing .warn{color:#B7791F;font-weight:600}
+.bp-scroll{overflow-x:auto}
+table.bp{border-collapse:separate;border-spacing:3px;width:100%;font-size:13.5px}
+table.bp th{font-size:12px;color:var(--gris);font-weight:700;padding:4px;text-align:center;white-space:nowrap}
+table.bp th.l{text-align:left}
+table.bp td.tema{font-weight:600;padding-right:8px;min-width:180px}
+table.bp td.cell{padding:0;min-width:64px}
+.bp-in{position:relative;border-radius:8px;display:flex;align-items:center;justify-content:center;height:40px}
+.bp-in input{width:48px;border:0;background:transparent;text-align:center;font:700 14px var(--texto);color:var(--tinta);padding:6px 0}
+.bp-in input:focus{box-shadow:none;background:rgba(255,255,255,.7);border-radius:6px}
+.bp-in.dark input{color:#fff}
+.bp-in.sel{outline:2.5px solid var(--brasa);outline-offset:-2px}
+.bp-hits{position:absolute;top:-7px;right:-5px;background:var(--brasa);color:#fff;border-radius:999px;font:700 10.5px var(--texto);padding:1px 6px}
+.bp-peso{width:64px!important;padding:8px!important;text-align:center;font-weight:700}
+.deuda{display:inline-block;height:8px;border-radius:4px;background:var(--brasa);vertical-align:1px;margin-right:8px}
+.deuda-0{background:var(--linea)}
+.rowsum{font-size:11.5px;color:var(--gris);text-align:center}
+.rowsum.bad{color:var(--brasa);font-weight:700}
+.legend{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--gris);margin-top:10px}
+.legend-bar{width:90px;height:8px;border-radius:4px;background:linear-gradient(90deg,rgba(14,124,107,.05),rgba(14,124,107,.8))}
+.acta{background:var(--tinta);color:#EAF1F7;border-radius:18px;padding:22px;margin-bottom:16px;box-shadow:var(--sombra-alta);position:relative;overflow:hidden}
+.acta::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(228,87,46,.35),transparent 65%)}
+.acta>*{position:relative;z-index:1}
+.acta h3{font-family:var(--display);font-size:22px;margin:0}
+.acta .sub{font-size:13px;color:#A9C0D4;margin:2px 0 14px}
+.acta dl{display:grid;grid-template-columns:150px 1fr;gap:6px 14px;margin:0;font-size:14px}
+.acta dt{color:#8FA7BE;font-weight:600}
+.acta dd{margin:0;word-break:break-all}
+.acta code{background:#1B3350;color:#9FE3D4;font-size:12.5px}
+@media(max-width:600px){.acta dl{grid-template-columns:1fr}}
+.intentos{margin-top:16px;display:flex;flex-direction:column;gap:6px}
+.intento{display:grid;grid-template-columns:78px 1fr 52px;gap:10px;align-items:center;font-size:12.5px}
+.intento .track{position:relative;height:10px;background:#1E3550;border-radius:6px}
+.intento .fill{position:absolute;left:0;top:0;bottom:0;border-radius:6px}
+.intento .lim{position:absolute;top:-4px;bottom:-4px;width:2px;background:#F5BF4F}
+.intento .exp{position:absolute;top:-4px;bottom:-4px;width:2px;background:#8FA7BE}
+.intento .v{text-align:right;font-weight:700}
+.tagx{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:2px 8px;background:var(--linea-2);color:var(--acero);margin:1px 2px}
+.tagx.t{background:var(--forjado-suave);color:var(--forjado)}
+.tagx.a{background:var(--brasa-suave);color:var(--brasa)}
+.paper{background:#fff;border:1px solid var(--linea);border-radius:18px;box-shadow:var(--sombra-alta);padding:34px 38px;max-width:880px;margin:0 auto}
+@media(max-width:700px){.paper{padding:20px 16px}}
+.paper-head{border-bottom:3px solid var(--tinta);padding-bottom:14px;margin-bottom:16px}
+.paper-head h3{font-family:var(--display);font-size:28px;margin:0 0 4px;letter-spacing:-.02em}
+.paper-head .pm{font-size:13.5px;color:var(--gris)}
+.q{padding:14px 0;border-bottom:1px solid var(--linea-2)}
+.q:last-child{border-bottom:0}
+.q-top{display:flex;gap:10px}
+.q-n{font:800 16px var(--display);flex:none;min-width:24px}
+.q-text{white-space:pre-wrap;flex:1}
+.q-pts{flex:none;font-size:12.5px;color:var(--gris);white-space:nowrap}
+.opts{margin:8px 0 0 34px;display:flex;flex-direction:column;gap:4px;font-size:14.5px}
+.opts .ok{color:var(--forjado);font-weight:700}
+.q-meta{margin:10px 0 0 34px}
+.variantes{margin:10px 0 0 34px;background:var(--papel);border-radius:10px;padding:10px 12px;font-size:13.5px}
+.variantes .vt{font-weight:700;color:var(--acero);margin-bottom:4px;font-size:12.5px}
+.variantes .vi{padding:5px 0;border-top:1px dashed var(--linea)}
+.variantes .vi:first-of-type{border-top:0}
+.crit{margin:8px 0 0 34px;font-size:13.5px;border-left:3px solid var(--forjado);padding:6px 10px;background:var(--forjado-suave);border-radius:0 8px 8px 0}
+.carta{background:#fff;border:1px solid var(--linea);border-radius:18px;box-shadow:var(--sombra-alta);padding:34px 40px;max-width:760px;margin:0 auto;font-size:16.5px;line-height:1.65}
+.carta p{margin:0 0 14px}
+@media(max-width:700px){.carta{padding:22px 18px}}
+.pubbox{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;justify-content:center}
+.stale{background:#FFF8E6;border:1px solid #F3DDA0;color:#6B4E00;border-radius:12px;padding:11px 15px;font-size:14px;margin-bottom:14px}
+.verify-ok{background:var(--forjado-suave);color:#0B5A4E;border-radius:12px;padding:12px 14px;font-weight:600}
+.verify-ko{background:var(--brasa-suave);color:var(--aviso);border-radius:12px;padding:12px 14px;font-weight:600}
+.keyhide{font-family:var(--mono);letter-spacing:.1em}
+@media print{
+  .noprint,.acta .intentos{display:none!important}
+  .screen.on{display:block!important}
+  .paper,.carta{box-shadow:none;border:0;padding:0}
+}
+</style>
+</head>
+<body>
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4z"/></symbol>
+  <symbol id="i-rocket" viewBox="0 0 24 24"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></symbol>
+  <symbol id="i-quiz" viewBox="0 0 24 24"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8M13 12h8M13 18h8"/></symbol>
+  <symbol id="i-cards" viewBox="0 0 24 24"><rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></symbol>
+  <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6M10 22h4"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></symbol>
+  <symbol id="i-github" viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></symbol>
+  <symbol id="i-archive" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4"/></symbol>
+  <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+  <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 3v4M17 5h4M5 17v4M3 19h4"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></symbol>
+  <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></symbol>
+  <symbol id="i-form" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+  <symbol id="i-tablet" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M12 18h.01"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M12 18h.01"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M6 14l1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-ext" viewBox="0 0 24 24"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h7M9 11h5"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+  <symbol id="i-print" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+  <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18M7 21h10M5 7h14M5 7l-3 7a3 3 0 0 0 6 0zM19 7l-3 7a3 3 0 0 0 6 0z"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6"/></symbol>
+</svg>
+
+<div class="topbar">
+  <div class="tb-in">
+    <button class="logo" id="goHome" type="button" aria-label="Ir al inicio"><span class="anv"><svg class="i"><use href="#i-shield"/></svg></span><span>Cualitativ<em>IA</em></span></button>
+    <nav class="stepper" id="stepper" aria-label="Pasos"></nav>
+    <div class="tb-tools"><button class="tb-btn" id="btnProy" type="button"><svg class="i"><use href="#i-archive"/></svg><span class="lbl">Mis estudios</span></button><button class="tb-btn" id="btnAjustes" type="button"><svg class="i"><use href="#i-key"/></svg><span class="lbl">IA</span></button><button class="tb-btn" id="btnHelp" type="button"><svg class="i"><use href="#i-help"/></svg><span class="lbl">Ayuda</span></button></div>
+  </div>
+  <div class="progress"><span id="progBar"></span></div>
+</div>
+
+<main id="app">
+<!-- ═════ 0 · INICIO ═════ -->
+<section class="screen" data-step="0">
+  <div class="hero">
+    <p class="eyebrow">Investigación cualitativa con datos sensibles · entrevistas y grupos focales · Universidad Miguel Hernández de Elche</p>
+    <h1>Tus entrevistas, <em>en tu ordenador</em></h1>
+    <p class="lede">Transcribe audio y vídeo con el reconocimiento de voz local de Chrome: el audio no sale de tu equipo. Asigna quién habla, anonimiza nombres, lugares y centros, y solo entonces, si quieres, pide a la IA árboles de códigos a varios niveles y desde varias interpretaciones, con citas literales comprobadas. Lo exportas a MAXQDA y sigues trabajando como siempre.</p>
+    <div class="actions"><button class="btn btn-primary btn-big" id="btnStart" type="button"><svg class="i"><use href="#i-play"/></svg>Empezar un estudio</button><button class="btn btn-ghost btn-big" id="btnDemo" type="button"><svg class="i"><use href="#i-eye"/></svg>Ver un estudio de ejemplo</button></div>
+    <p class="quote">El análisis lo piensas tú; <span>la IA te enseña caminos que no habías visto.</span></p>
+  </div>
+  <h2 class="sec-title">Dónde va cada cosa</h2>
+  <div class="zonas">
+    <div class="zona l"><h4>Siempre en tu ordenador</h4><ul><li>El audio y el vídeo, y su transcripción (reconocimiento local de Chrome)</li><li>Los nombres reales y la clave para reidentificar</li><li>La anonimización, las matrices de métodos mixtos y la exportación a MAXQDA</li><li>Tus estudios, guardados en este navegador</li></ul></div>
+    <div class="zona n"><h4>Solo si lo pides, y anonimizado</h4><ul><li>El análisis con IA envía a OpenAI el texto <b>ya anonimizado</b>: códigos en lugar de nombres</li><li>Antes de cada envío ves exactamente qué sale y la app vuelve a buscar datos personales</li><li>La página no puede conectar con ningún otro servidor: lo impide su política de seguridad</li><li>Sin clave, la app funciona entera salvo la propuesta de códigos</li></ul></div>
+  </div>
+  <h2 class="sec-title">Siete pasos</h2>
+  <div class="journey" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">
+    <div class="jstop" style="--c:#1F6FB2"><span class="jn">1</span><div class="ji"><svg class="i"><use href="#i-users"/></svg></div><b>Estudio</b><span>Objetivos y participantes con código.</span></div>
+    <div class="jstop" style="--c:#6B4FD8"><span class="jn">2</span><div class="ji"><svg class="i"><use href="#i-phone"/></svg></div><b>Transcribir</b><span>Local, en tiempo real.</span></div>
+    <div class="jstop" style="--c:#0E8C7A"><span class="jn">3</span><div class="ji"><svg class="i"><use href="#i-user"/></svg></div><b>Quién habla</b><span>Turnos y hablantes.</span></div>
+    <div class="jstop" style="--c:#E4572E"><span class="jn">4</span><div class="ji"><svg class="i"><use href="#i-shield"/></svg></div><b>Anonimizar</b><span>Nombres, lugares, centros, fechas.</span></div>
+    <div class="jstop" style="--c:#C98200"><span class="jn">5</span><div class="ji"><svg class="i"><use href="#i-sparkles"/></svg></div><b>Analizar</b><span>Árboles con profundidad desigual.</span></div>
+    <div class="jstop" style="--c:#1F6FB2"><span class="jn">6</span><div class="ji"><svg class="i"><use href="#i-grid"/></svg></div><b>Métodos mixtos</b><span>Matrices por participante y atributo.</span></div>
+    <div class="jstop" style="--c:#0E8C7A"><span class="jn">7</span><div class="ji"><svg class="i"><use href="#i-download"/></svg></div><b>MAXQDA</b><span>Libro de códigos y proyecto.</span></div>
+  </div>
+</section>
+
+<!-- ═════ 1 · ESTUDIO ═════ -->
+<section class="screen" data-step="1">
+  <header class="sh" style="--c:#1F6FB2"><div class="sh-ico"><svg class="i"><use href="#i-users"/></svg></div><div><p class="sh-step">Paso 1 de 7</p><h2>El estudio</h2><p class="sh-lede">Los objetivos orientan el análisis. Cada participante recibe un código (P1, P2…): es lo único que verá la IA. Los nombres reales y los atributos se quedan en tu ordenador.</p></div></header>
+  <div class="cols">
+    <div>
+      <div class="card"><div class="field"><label for="eTitulo">Título del estudio</label><input type="text" id="eTitulo" placeholder="Experiencias de familias de niños con discapacidad"></div><div class="field" style="margin:0"><label for="eObj">Objetivos o preguntas de investigación</label><textarea id="eObj" style="min-height:90px" placeholder="Explorar cómo viven las familias el proceso desde el diagnóstico…"></textarea></div></div>
+      <div class="card"><h3><svg class="i"><use href="#i-users"/></svg>Participantes</h3><p class="sub">El nombre real sirve para que la app lo detecte y lo sustituya en las transcripciones. Los atributos (rol, tipo de discapacidad del familiar, país…) se usan en métodos mixtos.</p>
+        <div class="part" style="font-size:11.5px;font-weight:800;color:var(--gris);text-transform:uppercase"><span>Código</span><span>Nombre real (local)</span><span>Rol</span><span id="attrHead">Atributo</span><span></span></div><div id="parts"></div>
+        <div class="actions"><button class="btn btn-ghost btn-sm" id="addPart" type="button"><svg class="i"><use href="#i-plus"/></svg>Participante</button><label style="display:flex;gap:6px;align-items:center;font-size:13px;margin:0">Nombre del atributo <input type="text" id="attrName" value="Grupo" style="width:150px;padding:5px 8px;border:1.5px solid var(--linea);border-radius:8px"></label></div></div>
+    </div>
+    <aside class="card sticky"><h3><svg class="i"><use href="#i-shield"/></svg>Privacidad</h3><p class="sub">Los datos de este estudio se guardan en IndexedDB de este navegador, en este ordenador. Los ficheros de audio y vídeo no se copian: si cierras la app, vuelve a seleccionarlos para escucharlos.</p><p class="sub" style="margin:0">Usa un ordenador y un perfil de Chrome que solo uses tú.</p></aside>
+  </div>
+</section>
+
+<!-- ═════ 2 · TRANSCRIBIR ═════ -->
+<section class="screen" data-step="2">
+  <header class="sh" style="--c:#6B4FD8"><div class="sh-ico"><svg class="i"><use href="#i-phone"/></svg></div><div><p class="sh-step">Paso 2 de 7</p><h2>Transcribir</h2><p class="sh-lede">Reconocimiento de voz de Chrome en modo local obligatorio: si el idioma no está instalado en tu equipo, la app no transcribe en la nube, te lo dice. La transcripción va al ritmo de la grabación.</p></div></header>
+  <div id="soporte"></div>
+  <div class="cols">
+    <div>
+      <div class="card"><label class="drop" id="drop" tabindex="0"><svg class="i"><use href="#i-upload"/></svg><b>Arrastra aquí audios o vídeos</b><span>mp3, m4a, wav, ogg, mp4, webm… · no se suben a ningún sitio</span><input type="file" id="fileMedia" multiple accept="audio/*,video/*" hidden></label>
+        <div class="actions" style="margin-top:10px"><label class="btn btn-ghost btn-sm" for="fileTrans" style="cursor:pointer"><svg class="i"><use href="#i-doc"/></svg>Importar una transcripción ya hecha</label><input type="file" id="fileTrans" multiple accept=".txt,.docx,.vtt,.srt" hidden><span class="help" style="margin:0">Texto, Word, VTT o SRT. Reconoce «Hablante: texto» y las marcas de tiempo de MAXQDA.</span></div></div>
+      <div id="ficheros"></div>
+    </div>
+    <aside class="card sticky"><h3><svg class="i"><use href="#i-globe"/></svg>Idiomas y variantes</h3><p class="sub">Elige la variante de cada fichero (por ejemplo, español de Argentina): el reconocimiento se adapta a su pronunciación y vocabulario. Gallego y valenciano solo funcionan si Chrome ofrece su paquete local en tu equipo.</p><p class="help" style="margin:0">Consejo: mientras transcribe, puedes escuchar o silenciar. Deja la pestaña visible y el equipo enchufado.</p></aside>
+  </div>
+</section>
+
+<!-- ═════ 3 · HABLANTES ═════ -->
+<section class="screen" data-step="3">
+  <header class="sh" style="--c:#0E8C7A"><div class="sh-ico"><svg class="i"><use href="#i-user"/></svg></div><div><p class="sh-step">Paso 3 de 7</p><h2>Quién habla y revisión</h2><p class="sh-lede">La app divide en turnos por las pausas, pero no reconoce voces: asigna cada turno a su participante. Pulsa la marca de tiempo para escuchar ese fragmento. Corrige el texto directamente.</p></div></header>
+  <div class="actions" style="margin-bottom:10px"><select id="selTrans" style="padding:7px 10px;border:1.5px solid var(--linea);border-radius:9px;min-width:240px"></select><span class="help" id="hablInfo" style="margin:0"></span><span style="margin-left:auto" class="actions"><button class="btn btn-ghost btn-sm" type="button" data-ins="[llora]">[llora]</button><button class="btn btn-ghost btn-sm" type="button" data-ins="[risas]">[risas]</button><button class="btn btn-ghost btn-sm" type="button" data-ins="[silencio]">[silencio]</button><button class="btn btn-ghost btn-sm" type="button" data-ins="[se solapan]">[se solapan]</button><button class="btn btn-ghost btn-sm" type="button" data-ins="[inaudible]">[inaudible]</button></span></div>
+  <div class="segs" id="segs"></div>
+  <p class="help">Las etiquetas entre corchetes se insertan donde está el cursor. «Unir» junta un turno con el anterior; Intro dentro de un turno lo divide.</p>
+</section>
+
+<!-- ═════ 4 · ANONIMIZAR ═════ -->
+<section class="screen" data-step="4">
+  <header class="sh" style="--c:#E4572E"><div class="sh-ico"><svg class="i"><use href="#i-shield"/></svg></div><div><p class="sh-step">Paso 4 de 7</p><h2>Anonimizar</h2><p class="sh-lede">La app busca, en tu ordenador, nombres, lugares, centros, fechas, contactos y documentos de identidad. Revisa la lista, añade lo que se le escape y decide el código de cada uno. La IA solo verá la versión de la derecha.</p></div></header>
+  <div class="cols">
+    <div>
+      <div class="card"><div class="actions" style="justify-content:space-between"><h3 style="margin:0">Datos identificativos <span class="help" id="entCount" style="margin:0"></span></h3><span class="actions"><button class="btn btn-ghost btn-sm" id="reDetect" type="button"><svg class="i"><use href="#i-refresh"/></svg>Volver a detectar</button></span></div>
+        <div class="addrow" style="display:grid;grid-template-columns:1fr 130px auto;gap:6px;margin:10px 0"><input type="text" id="entNueva" placeholder="Añadir un dato que se haya escapado (p. ej., un apodo)" style="padding:8px 10px;border:1.5px solid var(--linea);border-radius:9px"><select id="entTipo" style="padding:6px;border:1.5px solid var(--linea);border-radius:9px"><option>NOMBRE</option><option>LUGAR</option><option>CENTRO</option><option>FECHA</option><option>CONTACTO</option><option>OTRO</option></select><button class="btn btn-ghost btn-sm" id="entAdd" type="button">Añadir</button></div>
+        <div id="ents"></div></div>
+      <div class="card"><h3>Vista previa <select id="selPrev" style="margin-left:8px;padding:4px 8px;border:1.5px solid var(--linea);border-radius:8px;font-size:13px"></select></h3><div class="cmp"><div><p class="sublab" style="margin-top:0">Original (solo en tu ordenador)</p><pre id="prevO"></pre></div><div><p class="sublab" style="margin-top:0">Lo que vería la IA</p><pre id="prevA"></pre></div></div></div>
+    </div>
+    <aside class="card sticky"><h3><svg class="i"><use href="#i-bulb"/></svg>Cómo funciona</h3><p class="sub">La detección combina patrones (correos, teléfonos, DNI, fechas, direcciones, «Hospital…», «colegio…»), una lista de nombres y lugares, los nombres reales de tus participantes y las palabras con mayúscula que no inician frase.</p><p class="sub" style="margin:0"><b>No es infalible:</b> revisa la vista previa. Los apodos, los diminutivos y los detalles muy concretos (una profesión rara, un suceso conocido) también pueden identificar.</p></aside>
+  </div>
+</section>
+
+<!-- ═════ 5 · ANALIZAR ═════ -->
+<section class="screen" data-step="5">
+  <header class="sh" style="--c:#C98200"><div class="sh-ico"><svg class="i"><use href="#i-sparkles"/></svg></div><div><p class="sh-step">Paso 5 de 7</p><h2>Árboles de códigos</h2><p class="sh-lede" id="anLede">Elige una o varias interpretaciones. Cada rama se profundiza mientras haya ideas distintas con evidencia propia: unas llegarán a cuatro niveles y otras se quedarán en uno.</p></div></header>
+  <div class="card"><h3>Interpretaciones</h3><div class="lentes" id="lentes"></div><div class="field" id="marcoWrap" style="margin:10px 0 0"><label for="marco">Marco teórico para la tercera interpretación</label><input type="text" id="marco" placeholder="Modelo de calidad de vida familiar (Turnbull), CIF, modelo social de la discapacidad…"></div>
+    <div class="grid3" style="margin-top:10px"><div class="field"><label for="maxNiv">Profundidad máxima</label><select id="maxNiv"><option>3</option><option selected>4</option><option>5</option></select></div><div class="field"><label for="minSeg">Fragmentos mínimos para subdividir</label><select id="minSeg"><option>2</option><option selected>3</option><option>4</option></select></div><div class="field"><label for="tope">Tope de consultas por interpretación</label><select id="tope"><option>20</option><option selected>40</option><option>80</option></select></div></div>
+    <div class="actions"><button class="btn btn-primary" id="btnAnalizar" type="button"><svg class="i"><use href="#i-sparkles"/></svg>Revisar el envío y analizar</button><span class="help" id="anInfo" style="margin:0"></span></div><div id="anLog" style="margin-top:10px;font-size:13.5px;line-height:1.8"></div></div>
+  <div class="tabs" id="tabs"></div>
+  <div class="cols"><div class="arbol" id="arbol"><p class="empty">Aún no hay árboles.</p></div><aside class="card sticky" id="arbolSide"></aside></div>
+</section>
+
+<!-- ═════ 6 · MÉTODOS MIXTOS ═════ -->
+<section class="screen" data-step="6">
+  <header class="sh" style="--c:#1F6FB2"><div class="sh-ico"><svg class="i"><use href="#i-grid"/></svg></div><div><p class="sh-step">Paso 6 de 7</p><h2>Métodos mixtos</h2><p class="sh-lede">Todo se calcula en tu ordenador a partir del árbol elegido: cuántos fragmentos de cada código aporta cada participante y cómo se reparten los códigos según el atributo.</p></div></header>
+  <div class="actions" style="margin-bottom:10px"><select id="selMx" style="padding:7px 10px;border:1.5px solid var(--linea);border-radius:9px"></select><select id="nivMx" style="padding:7px 10px;border:1.5px solid var(--linea);border-radius:9px"><option value="1">Códigos de primer nivel</option><option value="9">Todos los códigos</option></select><button class="btn btn-ghost btn-sm" id="expMx" type="button"><svg class="i"><use href="#i-download"/></svg>CSV para SPSS o R</button></div>
+  <div class="card"><h3>Códigos × participantes <small class="help" style="margin:0">número de fragmentos</small></h3><div style="overflow-x:auto" id="mx1"></div></div>
+  <div class="card"><h3 id="mx2t">Códigos × atributo</h3><div style="overflow-x:auto" id="mx2"></div><p class="help">Porcentaje de participantes de cada grupo que mencionan el código. Con muestras cualitativas pequeñas, léelo como descripción, no como contraste estadístico.</p></div>
+</section>
+
+<!-- ═════ 7 · EXPORTAR ═════ -->
+<section class="screen" data-step="7">
+  <header class="sh" style="--c:#0E8C7A"><div class="sh-ico"><svg class="i"><use href="#i-download"/></svg></div><div><p class="sh-step">Paso 7 de 7</p><h2>A MAXQDA y al informe</h2><p class="sh-lede">Tú decides si exportas el texto original o el anonimizado. Las exportaciones se generan en tu ordenador.</p></div></header>
+  <div class="cols"><div>
+    <div class="card"><h3>Transcripciones</h3><div class="actions"><label style="display:flex;gap:6px;font-size:14px;margin:0"><input type="radio" name="vers" value="anon" checked> Anonimizadas</label><label style="display:flex;gap:6px;font-size:14px;margin:0"><input type="radio" name="vers" value="orig"> Originales</label></div><div class="actions" style="margin-top:10px"><button class="btn btn-ghost btn-sm" id="expTxt" type="button">Texto para MAXQDA (.txt, una por fichero)</button><button class="btn btn-word btn-sm" id="expTransDocx" type="button">Word</button></div><p class="help">Formato «Hablante: texto» con marcas de tiempo #hh:mm:ss-0#, que MAXQDA reconoce al importar transcripciones y grupos focales.</p></div>
+    <div class="card"><h3>Códigos</h3><div class="actions"><select id="selExp" style="padding:7px 10px;border:1.5px solid var(--linea);border-radius:9px"></select><button class="btn btn-ghost btn-sm" id="expQdc" type="button">Libro de códigos REFI-QDA (.qdc)</button><button class="btn btn-ghost btn-sm" id="expQdpx" type="button">Proyecto REFI-QDA (.qdpx)</button><button class="btn btn-word btn-sm" id="expInf" type="button">Informe con citas (Word)</button></div><p class="help">MAXQDA, ATLAS.ti y NVivo importan el estándar REFI-QDA. El proyecto incluye las transcripciones y los fragmentos codificados; compruébalo primero con una copia en tu MAXQDA.</p></div>
+  </div>
+  <aside class="card sticky"><h3><svg class="i"><use href="#i-key"/></svg>Copia del estudio</h3><p class="sub">Contiene datos reales: guárdala cifrada o en un lugar protegido.</p><div class="actions" style="flex-direction:column;align-items:stretch"><button class="btn btn-ghost btn-sm" id="expJson" type="button">Copia completa (.json)</button><button class="btn btn-ghost btn-sm" id="expClave" type="button">Clave de reidentificación (.csv)</button></div></aside></div>
+</section>
+</main>
+
+<footer><hr><p>CualitativIA · Fernando Borrás Rocher · Universidad Miguel Hernández de Elche. Herramienta de apoyo: el análisis y sus decisiones son de la investigadora. Transcripción con el reconocimiento de voz local de Chrome; la página solo puede conectar con OpenAI, y solo con texto anonimizado tras tu confirmación.</p></footer>
+<div class="bottomnav"><div class="bn-in"><button class="btn btn-ghost" id="navBack" type="button"><svg class="i"><use href="#i-left"/></svg>Atrás</button><div class="bn-hint" id="navHint"></div><button class="btn btn-primary" id="navNext" type="button"><span id="navNextTxt">Siguiente</span><svg class="i"><use href="#i-right"/></svg></button></div></div>
+<div class="modal" id="mEnvio" role="dialog" aria-modal="true" aria-labelledby="mEnT"><div class="modal-box envio"><div class="modal-head"><h2 id="mEnT">Esto es lo que saldría hacia OpenAI</h2><button type="button" data-close>Cerrar</button></div><div class="modal-body"><div id="envioInfo"></div><pre id="envioTxt"></pre><label style="display:flex;gap:8px;font-size:14px;margin:12px 0"><input type="checkbox" id="envioOk"> He revisado el texto y confirmo que puede salir de mi ordenador anonimizado.</label><div class="actions"><button class="btn btn-primary" id="envioSi" type="button" disabled>Enviar y analizar</button><button class="btn btn-ghost" data-close type="button">Cancelar</button></div></div></div></div>
+<div class="modal" id="mProy" role="dialog" aria-modal="true" aria-labelledby="mPrT"><div class="modal-box"><div class="modal-head"><h2 id="mPrT">Mis estudios</h2><button type="button" data-close>Cerrar</button></div><div class="modal-body"><div id="proys"></div><div class="actions" style="margin-top:12px"><label class="btn btn-ghost btn-sm" for="fileJson" style="cursor:pointer"><svg class="i"><use href="#i-upload"/></svg>Abrir una copia (.json)</label><input type="file" id="fileJson" accept=".json" hidden></div></div></div></div>
+<div class="modal" id="mAjustes" role="dialog" aria-modal="true" aria-labelledby="mAjT"><div class="modal-box"><div class="modal-head"><h2 id="mAjT">Inteligencia artificial (opcional)</h2><button type="button" data-close>Cerrar</button></div><div class="modal-body"><p class="sub" style="margin-top:0">Solo se usa para proponer árboles de códigos, y solo con texto anonimizado tras tu confirmación. Si tu proyecto lo exige, consulta antes con el comité de ética o el delegado de protección de datos: OpenAI trata los datos fuera de la UE salvo acuerdo específico.</p><label style="display:flex;gap:8px;font-size:14px;margin:0 0 12px"><input type="checkbox" id="sinIA"> Modo sin IA: bloquear cualquier envío</label><div class="field"><label for="apiKey">Clave de OpenAI</label><div class="keyrow"><input type="password" id="apiKey" placeholder="sk-proj-…" autocomplete="off"><button class="eye" id="btnEye" type="button" aria-label="Mostrar u ocultar"><svg class="i"><use href="#i-eye"/></svg></button></div></div><div class="field" style="margin:0"><label for="modelo">Modelo</label><select id="modelo"><option value="gpt-6-luna">gpt-6-luna (recomendado)</option><option value="gpt-4.1">gpt-4.1</option><option value="gpt-4.1-mini">gpt-4.1-mini</option></select></div></div></div></div>
+<div class="modal" id="mHelp" role="dialog" aria-modal="true" aria-labelledby="mHelpT"><div class="modal-box"><div class="modal-head"><h2 id="mHelpT">Ayuda</h2><button type="button" data-close>Cerrar</button></div><div class="modal-body"><div class="glos" id="glos"></div></div></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+"use strict";
+/* ══════════════════════════════════════════════════════════
+   CualitativIA · investigación cualitativa privada
+   Fernando Borrás Rocher · Universidad Miguel Hernández de Elche
+   ══════════════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id), $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const xesc = s => esc(s).replace(/'/g, '&apos;');
+const ico = n => `<svg class="i"><use href="#i-${n}"/></svg>`;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const uid = p => p + Math.random().toString(36).slice(2, 8);
+const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[«»"“”'’.,;:¡!¿?()\[\]…\-–—]/g, ' ').replace(/\s+/g, ' ').trim();
+const hms = s => { s = Math.max(0, Math.round(s || 0)); return [Math.floor(s / 3600), Math.floor(s / 60) % 60, s % 60].map(x => String(x).padStart(2, '0')).join(':'); };
+function toast(m, ms = 4000){ const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('on'), ms); }
+function dl(n, c, t){ const b = c instanceof Blob ? c : new Blob([c], {type:t}); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = n; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 1500); }
+function cargaLib(urls){ return urls.reduce((p,u) => p.catch(() => new Promise((ok,ko) => { const s = document.createElement('script'); s.src = u; s.onload = ok; s.onerror = () => { s.remove(); ko(); }; document.head.appendChild(s); })), Promise.reject()).catch(() => { throw new Error('No se pudo cargar una librería: ¿hay conexión?'); }); }
+
+/* ══════════ ESTUDIO (IndexedDB local) ══════════ */
+const nuevo = () => ({id:'E' + Date.now(), titulo:'', objetivos:'', attrName:'Grupo', participantes:[{codigo:'P1', nombre:'', rol:'', attr:''}], trans:[], ents:[], arboles:[], creado:Date.now()});
+let P = nuevo();
+const dbP = new Promise((ok,ko) => { const r = indexedDB.open('cualitativia', 1); r.onupgradeneeded = () => r.result.createObjectStore('estudios', {keyPath:'id'}); r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error); });
+const tx = async (m, fn) => { const d = await dbP; return new Promise((ok,ko) => { const t = d.transaction('estudios', m), q = fn(t.objectStore('estudios')); t.oncomplete = () => ok(q && q.result); t.onerror = () => ko(t.error); }); };
+let _g; function guarda(){ if(P._demo) return; clearTimeout(_g); _g = setTimeout(() => { P.actualizado = Date.now(); tx('readwrite', s => s.put(P)).catch(() => toast('No se pudo guardar en el navegador')); }, 500); }
+const MEDIA = {};   /* ficheros de esta sesión: nunca se guardan ni se envían */
+const hablantes = () => [{codigo:'MOD', nombre:'Moderadora / entrevistadora'}, ...P.participantes.filter(p => p.codigo)];
+const todosSegs = () => P.trans.flatMap(t => t.segs.map(s => ({...s, tr:t.id})));
+const segPorId = id => { for(const t of P.trans){ const s = t.segs.find(x => x.id === id); if(s) return s; } return null; };
+
+/* ══════════ NAVEGACIÓN ══════════ */
+let step = 0, trabajando = false;
+const STEPS = ['Inicio','Estudio','Transcribir','Hablantes','Anonimizar','Analizar','Mixtos','Exportar'];
+function buildStepper(){ $('stepper').innerHTML = STEPS.map((s,i) => `${i ? `<span class="sline${i <= step ? ' on' : ''}"></span>` : ''}<button class="sdot" type="button" data-go="${i}" data-state="${i < step ? 'done' : i === step ? 'now' : ''}" ${i === step ? 'aria-current="step"' : ''}><span class="n">${i < step ? ico('check') : i === 0 ? ico('shield') : i}</span><span class="lbl">${s}</span></button>`).join(''); $$('#stepper [data-go]').forEach(b => b.onclick = () => { if(!trabajando) go(+b.dataset.go); }); }
+function go(i){ step = i; $$('.screen').forEach(s => s.classList.toggle('on', +s.dataset.step === i)); $('progBar').style.width = (i / 7 * 100) + '%'; ({1:pintaEstudio, 2:pintaFicheros, 3:pintaSegs, 4:pintaAnon, 5:pintaAnalisis, 6:pintaMixtos, 7:pintaExport}[i] || (() => {}))(); buildStepper(); updateNav(); window.scrollTo({top:0, behavior:'instant'}); }
+const NAV = [['Empezar','Prueba el <b>estudio de ejemplo</b>: no necesita clave.'],['Siguiente: transcribir','Los nombres reales nunca salen de este ordenador.'],['Siguiente: quién habla','La transcripción va al ritmo del audio.'],['Siguiente: anonimizar','Asigna cada turno: la app no reconoce voces.'],['Siguiente: analizar','Revisa la vista previa antes de seguir.'],['Siguiente: métodos mixtos','Antes de enviar verás exactamente qué sale.'],['Siguiente: exportar','Todo calculado en tu ordenador.'],['Volver al inicio','Guarda la clave de reidentificación aparte.']];
+function updateNav(){ $('navBack').classList.toggle('hidden', step === 0); $('navNextTxt').textContent = NAV[step][0]; $('navHint').innerHTML = NAV[step][1]; $('navNext').disabled = trabajando; }
+$('navBack').onclick = () => { if(!trabajando && step > 0) go(step - 1); };
+$('navNext').onclick = () => { if(trabajando) return; if(step === 1 && !P.titulo.trim()){ $('eTitulo').focus(); return toast('Ponle un título al estudio'); } if(step === 3 && !P.trans.length) return toast('Primero transcribe o importa algún fichero'); if(step === 4) detectaTodo(false); go(step === 7 ? 0 : step + 1); };
+$('goHome').onclick = () => { if(!trabajando) go(0); };
+$('btnStart').onclick = () => { if(P._demo || P.trans.length && !confirm('¿Empezar un estudio nuevo? El actual queda en «Mis estudios».')) { if(P._demo) P = nuevo(); else return; } else P = nuevo(); go(1); };
+
+/* ══════════ 1 · ESTUDIO ══════════ */
+function pintaEstudio(){
+  $('eTitulo').value = P.titulo; $('eObj').value = P.objetivos; $('attrName').value = P.attrName || 'Grupo'; $('attrHead').textContent = P.attrName || 'Atributo';
+  $('parts').innerHTML = P.participantes.map((p,i) => `<div class="part"><span class="cod">${esc(p.codigo)}</span><input value="${esc(p.nombre)}" data-pn="${i}" placeholder="Nombre y apellidos" autocomplete="off"><input value="${esc(p.rol)}" data-pr="${i}" placeholder="Madre, padre, profesional…"><input value="${esc(p.attr)}" data-pa="${i}" placeholder="${esc(P.attrName)}"><button class="iconbtn" type="button" data-px="${i}" aria-label="Quitar">${ico('trash')}</button></div>`).join('');
+  const on = (s, k) => $$('#parts [' + s + ']').forEach(x => x.oninput = () => { P.participantes[+x.getAttribute(s)][k] = x.value; guarda(); });
+  on('data-pn', 'nombre'); on('data-pr', 'rol'); on('data-pa', 'attr');
+  $$('#parts [data-px]').forEach(b => b.onclick = () => { P.participantes.splice(+b.dataset.px, 1); guarda(); pintaEstudio(); });
+}
+$('eTitulo').oninput = () => { P.titulo = $('eTitulo').value; guarda(); };
+$('eObj').oninput = () => { P.objetivos = $('eObj').value; guarda(); };
+$('attrName').oninput = () => { P.attrName = $('attrName').value; $('attrHead').textContent = P.attrName; guarda(); };
+$('addPart').onclick = () => { const n = Math.max(0, ...P.participantes.map(p => +String(p.codigo).replace(/\D/g, '') || 0)) + 1; P.participantes.push({codigo:'P' + n, nombre:'', rol:'', attr:''}); guarda(); pintaEstudio(); };
+
+/* ══════════ 2 · TRANSCRIPCIÓN LOCAL (Web Speech API con processLocally) ══════════ */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const IDIOMAS = [['es-ES','Español (España)'],['es-AR','Español (Argentina)'],['es-MX','Español (México)'],['es-US','Español (EE. UU.)'],['en-GB','Inglés (Reino Unido)'],['en-US','Inglés (EE. UU.)'],['ca-ES','Catalán / valenciano'],['gl-ES','Gallego'],['eu-ES','Euskera'],['pt-PT','Portugués (Portugal)'],['pt-BR','Portugués (Brasil)'],['fr-FR','Francés'],['it-IT','Italiano'],['de-DE','Alemán']];
+const localOK = () => !!(SR && 'processLocally' in SR.prototype && SR.available);
+function pintaSoporte(){ $('soporte').innerHTML = !SR ? `<div class="aviso"><b>Este navegador no tiene reconocimiento de voz.</b> Usa Google Chrome de escritorio actualizado. Mientras tanto puedes importar transcripciones ya hechas.</div>` : !localOK() ? `<div class="aviso"><b>Tu Chrome no permite exigir el reconocimiento local</b> (falta <code>processLocally</code>). Actualiza Chrome. La app no transcribirá en la nube: puedes importar transcripciones ya hechas.</div>` : `<div class="okbox">${ico('shield')}<span>Reconocimiento local disponible. Cada transcripción se hace con <code>processLocally = true</code>: si el idioma no está en tu equipo, Chrome no lo envía a ningún servidor; la app te ofrece descargar el paquete.</span></div>`; }
+async function disponibilidad(lang){ if(!localOK()) return 'unavailable'; try{ return await SR.available({langs:[lang], processLocally:true}); }catch(e){ return 'unavailable'; } }
+subidaMedia();
+function subidaMedia(){ const d = $('drop'); ['dragenter','dragover'].forEach(ev => d.addEventListener(ev, e => { e.preventDefault(); d.classList.add('over'); })); ['dragleave','drop'].forEach(ev => d.addEventListener(ev, e => { e.preventDefault(); d.classList.remove('over'); })); d.addEventListener('drop', e => anadeMedia([...e.dataTransfer.files])); d.onkeydown = e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('fileMedia').click(); } }; $('fileMedia').onchange = e => { anadeMedia([...e.target.files]); e.target.value = ''; }; }
+function anadeMedia(fs){ fs.filter(f => /^(audio|video)\//.test(f.type) || /\.(mp3|m4a|wav|ogg|oga|mp4|webm|mov|mkv|aac|flac)$/i.test(f.name)).forEach(f => { const ex = P.trans.find(t => t.fichero === f.name && !t.segs.length); const t = ex || {id:'T' + (P.trans.length + 1), nombre:f.name.replace(/\.[^.]+$/, ''), fichero:f.name, idioma:'es-ES', tipo:'entrevista', segs:[], dur:0}; if(!ex) P.trans.push(t); MEDIA[t.id] = f; }); guarda(); pintaFicheros(); }
+async function pintaFicheros(){
+  pintaSoporte();
+  $('ficheros').innerHTML = P.trans.map(t => `<div class="fich"><div class="h"><b>${esc(t.nombre)}</b><span class="help" style="margin:0">${t.segs.length ? t.segs.length + ' turnos' : 'sin transcribir'}${t.dur ? ' · ' + hms(t.dur) : ''}${MEDIA[t.id] ? '' : t.fichero ? ' · audio no vinculado en esta sesión' : ''}</span><button class="iconbtn" type="button" data-tx="${t.id}" aria-label="Quitar">${ico('trash')}</button></div>
+    <div class="actions" style="margin-top:8px"><select data-tl="${t.id}" style="padding:6px 8px;border:1.5px solid var(--linea);border-radius:8px">${IDIOMAS.map(([c,n]) => `<option value="${c}" ${t.idioma === c ? 'selected' : ''}>${n}</option>`).join('')}</select><select data-tt="${t.id}" style="padding:6px 8px;border:1.5px solid var(--linea);border-radius:8px"><option value="entrevista" ${t.tipo === 'entrevista' ? 'selected' : ''}>Entrevista</option><option value="grupo" ${t.tipo === 'grupo' ? 'selected' : ''}>Grupo focal</option></select><span class="disp" id="disp-${t.id}">…</span>${MEDIA[t.id] ? `<button class="btn btn-primary btn-sm" type="button" data-go-tr="${t.id}">${ico('play')}${t.segs.length ? 'Volver a transcribir' : 'Transcribir'}</button><label style="display:flex;gap:5px;font-size:13px;margin:0"><input type="checkbox" data-oir="${t.id}" checked> escuchar</label>` : `<label class="btn btn-ghost btn-sm" style="cursor:pointer">${ico('upload')}Vincular audio o vídeo<input type="file" accept="audio/*,video/*" data-vinc="${t.id}" hidden></label>`}</div>
+    <div id="prog-${t.id}" class="help" style="margin:6px 0 0"></div></div>`).join('') || '<p class="empty">Aún no hay ficheros.</p>';
+  $$('#ficheros [data-tl]').forEach(s => s.onchange = () => { P.trans.find(t => t.id === s.dataset.tl).idioma = s.value; guarda(); pintaDisp(s.dataset.tl); });
+  $$('#ficheros [data-tt]').forEach(s => s.onchange = () => { P.trans.find(t => t.id === s.dataset.tt).tipo = s.value; guarda(); });
+  $$('#ficheros [data-tx]').forEach(b => b.onclick = () => { if(!confirm('¿Quitar este fichero y su transcripción?')) return; P.trans = P.trans.filter(t => t.id !== b.dataset.tx); guarda(); pintaFicheros(); });
+  $$('#ficheros [data-vinc]').forEach(i => i.onchange = () => { if(i.files[0]){ MEDIA[i.dataset.vinc] = i.files[0]; pintaFicheros(); } });
+  $$('#ficheros [data-go-tr]').forEach(b => b.onclick = () => transcribir(b.dataset.goTr));
+  P.trans.forEach(t => pintaDisp(t.id));
+}
+async function pintaDisp(id){
+  const t = P.trans.find(x => x.id === id), el = $('disp-' + id); if(!el) return;
+  const d = await disponibilidad(t.idioma);
+  el.className = 'disp ' + (d === 'available' ? 'ok' : d === 'unavailable' ? 'ko' : 'dl');
+  el.innerHTML = d === 'available' ? 'local ✓' : d === 'downloadable' ? `<button type="button" style="border:0;background:transparent;font:inherit;color:inherit;cursor:pointer" data-inst="${t.idioma}">descargar paquete local</button>` : d === 'downloading' ? 'descargando…' : 'sin paquete local';
+  const b = el.querySelector('[data-inst]'); if(b) b.onclick = async () => { el.textContent = 'descargando…'; try{ const ok = await SR.install({langs:[t.idioma], processLocally:true}); toast(ok ? 'Paquete de idioma instalado en tu equipo' : 'Chrome no ha podido instalar el paquete'); }catch(e){ toast('No se pudo instalar: ' + e.message); } pintaDisp(id); };
+}
+let transActiva = null;
+async function transcribir(id){
+  const t = P.trans.find(x => x.id === id), f = MEDIA[id]; if(!f) return;
+  if(!localOK()) return toast('Tu navegador no permite el reconocimiento local. Actualiza Chrome.', 6000);
+  const d = await disponibilidad(t.idioma); if(d !== 'available') return toast(d === 'unavailable' ? 'No hay reconocimiento local para este idioma en tu equipo. No se usará la nube.' : 'Descarga primero el paquete local del idioma.', 6000);
+  if(t.segs.length && !confirm('Se sustituirá la transcripción actual de este fichero. ¿Seguir?')) return;
+  if(transActiva) return toast('Ya hay una transcripción en marcha');
+  const el = document.createElement(/^video\//.test(f.type) || /\.(mp4|webm|mov|mkv)$/i.test(f.name) ? 'video' : 'audio'); el.src = URL.createObjectURL(f); el.preload = 'auto';
+  await new Promise((ok, ko) => { el.onloadedmetadata = ok; el.onerror = () => ko(new Error('El navegador no puede leer este fichero')); }).catch(e => { toast(e.message); throw e; });
+  const ctx = new AudioContext(), src = ctx.createMediaElementSource(el), dest = ctx.createMediaStreamDestination(); src.connect(dest);
+  const oir = $$(`[data-oir="${id}"]`)[0]; if(!oir || oir.checked) src.connect(ctx.destination);
+  const track = dest.stream.getAudioTracks()[0], rec = new SR(); rec.lang = t.idioma; rec.continuous = true; rec.interimResults = true; rec.processLocally = true;
+  t.segs = []; t.dur = el.duration; let ini = 0, parar = false, n = 0; const prog = $('prog-' + id);
+  transActiva = {parar:() => { parar = true; el.pause(); try{ rec.stop(); }catch(e){} }};
+  prog.innerHTML = `<span class="spin"></span> Transcribiendo en tu ordenador… <button class="btn btn-ghost btn-sm" type="button" id="stopTr" style="padding:2px 10px">Detener</button> <span id="interim" style="font-style:italic"></span>`;
+  $('stopTr').onclick = () => transActiva.parar();
+  rec.onresult = e => { let interim = ''; for(let i = e.resultIndex; i < e.results.length; i++){ const r = e.results[i]; if(r.isFinal){ const txt = r[0].transcript.trim(); if(txt){ const ahora = el.currentTime; t.segs.push({id:`${t.id}-${++n}`, t0:ini, t1:ahora, h:'', texto:txt.charAt(0).toUpperCase() + txt.slice(1)}); ini = ahora; } } else interim += r[0].transcript; } const ii = $('interim'); if(ii) ii.textContent = `${hms(el.currentTime)} / ${hms(el.duration)} · ${t.segs.length} turnos · ${interim.slice(-80)}`; };
+  rec.onerror = e => { if(e.error === 'no-speech' || e.error === 'aborted') return; if(e.error === 'language-not-supported' || e.error === 'service-not-allowed'){ parar = true; toast('El reconocimiento local no admite este idioma en tu equipo. No se ha enviado nada fuera.', 7000); el.pause(); } };
+  rec.onend = () => { if(!parar && !el.ended){ try{ rec.start(track); }catch(e){} } else fin(); };
+  let fue = false; const fin = () => { if(fue) return; fue = true; transActiva = null; ctx.close(); URL.revokeObjectURL(el.src); guarda(); prog.textContent = `Terminado: ${t.segs.length} turnos. Ahora asigna quién habla (paso 3).`; pintaFicheros(); };
+  el.onended = () => { parar = true; setTimeout(() => { try{ rec.stop(); }catch(e){} fin(); }, 1500); };
+  await ctx.resume(); await el.play(); rec.start(track);
+}
+/* importar transcripciones existentes (incluidas las de MAXQDA) */
+$('fileTrans').onchange = async e => { for(const f of [...e.target.files]){ try{ let txt = /\.docx$/i.test(f.name) ? await (async () => { await cargaLib(['https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js']); return (await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value; })() : await f.text(); P.trans.push(parseTrans(txt, f.name)); }catch(err){ toast(f.name + ': ' + err.message); } } e.target.value = ''; guarda(); pintaFicheros(); toast('Transcripción importada. Revisa los hablantes en el paso 3.'); };
+function parseTrans(txt, nombre){
+  const t = {id:'T' + (P.trans.length + 1), nombre:nombre.replace(/\.[^.]+$/, ''), fichero:'', idioma:'es-ES', tipo:'entrevista', segs:[], dur:0}; let n = 0, tt = 0;
+  const aSeg = s => { const p = s.split(':').map(Number); return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p[0] * 60 + (p[1] || 0); };
+  const lineas = txt.replace(/\r/g, '').split(/\n/), vtt = /-->/.test(txt);
+  if(vtt){ for(let i = 0; i < lineas.length; i++){ const m = lineas[i].match(/(\d{1,2}:\d{2}:\d{2}|\d{1,2}:\d{2})[.,]\d+\s*-->\s*(\d{1,2}:\d{2}:\d{2}|\d{1,2}:\d{2})/); if(m){ let x = []; while(lineas[++i] && lineas[i].trim()) x.push(lineas[i].trim()); const s = x.join(' ').replace(/<v ([^>]+)>/, '$1: ').replace(/<[^>]+>/g, ''), h = s.match(/^([^:]{1,30}):\s+(.*)$/); t.segs.push({id:`${t.id}-${++n}`, t0:aSeg(m[1]), t1:aSeg(m[2]), h:h ? h[1].trim() : '', texto:h ? h[2] : s}); } } }
+  else for(const l of lineas){ let s = l.trim(); if(!s) continue; const ts = s.match(/#(\d{1,2}:\d{2}:\d{2})(?:[-.,]\d)?#/); if(ts){ tt = aSeg(ts[1]); s = s.replace(/#\d{1,2}:\d{2}:\d{2}(?:[-.,]\d)?#/g, '').trim(); } const h = s.match(/^([A-ZÁÉÍÓÚÑ0-9][^:]{0,30}):\s+(.*)$/); if(!s) continue; t.segs.push({id:`${t.id}-${++n}`, t0:tt, t1:tt, h:h ? h[1].trim() : '', texto:h ? h[2] : s}); }
+  const nombresH = [...new Set(t.segs.map(s => s.h).filter(Boolean))];
+  nombresH.forEach(h => { if(hablantes().some(x => x.codigo === h)) return; if(/^(mod|moderador|moderadora|entrevistador|entrevistadora|investigador|investigadora|i|e)$/i.test(h)){ t.segs.forEach(s => { if(s.h === h) s.h = 'MOD'; }); return; } let p = P.participantes.find(x => norm(x.nombre) === norm(h)); if(!p){ p = P.participantes.find(x => !x.nombre && !x.rol) || null; if(!p){ const k = Math.max(0, ...P.participantes.map(x => +String(x.codigo).replace(/\D/g, '') || 0)) + 1; p = {codigo:'P' + k, nombre:'', rol:'', attr:''}; P.participantes.push(p); } p.nombre = p.nombre || h; } t.segs.forEach(s => { if(s.h === h) s.h = p.codigo; }); });
+  if(nombresH.length > 2) t.tipo = 'grupo';
+  return t;
+}
+
+/* ══════════ 3 · HABLANTES Y REVISIÓN ══════════ */
+let trSel = null, audioRev = null, ultimoFoco = null;
+function pintaSegs(){
+  if(!P.trans.length){ $('segs').innerHTML = '<p class="empty" style="padding:20px">Aún no hay transcripciones.</p>'; return; }
+  if(!P.trans.some(t => t.id === trSel)) trSel = P.trans[0].id;
+  $('selTrans').innerHTML = P.trans.map(t => `<option value="${t.id}" ${t.id === trSel ? 'selected' : ''}>${esc(t.nombre)} (${t.segs.length})</option>`).join('');
+  const t = P.trans.find(x => x.id === trSel), H = hablantes(), sin = t.segs.filter(s => !s.h).length;
+  $('hablInfo').textContent = sin ? `${sin} turno(s) sin asignar` : 'Todos los turnos asignados';
+  $('segs').innerHTML = t.segs.map((s,i) => `<div class="seg"><span class="tm" data-play="${i}" title="Escuchar desde aquí">${hms(s.t0)}</span><select data-h="${i}" class="${s.h ? '' : 'vac'}" aria-label="Hablante del turno ${i + 1}"><option value="">¿quién?</option>${H.map(h => `<option value="${esc(h.codigo)}" ${s.h === h.codigo ? 'selected' : ''}>${esc(h.codigo)}${h.nombre && h.codigo !== 'MOD' ? ' · ' + esc(h.nombre.split(' ')[0]) : h.codigo === 'MOD' ? ' · moderadora' : ''}</option>`).join('')}</select><div contenteditable="true" data-tx="${i}" spellcheck="true">${esc(s.texto)}</div><button class="iconbtn" type="button" data-un="${i}" title="Unir con el anterior" ${i ? '' : 'disabled'}>⤒</button></div>`).join('');
+  $$('#segs [data-h]').forEach(x => x.onchange = () => { const i = +x.dataset.h; t.segs[i].h = x.value; for(let j = i + 1; j < t.segs.length && !t.segs[j].h && t.tipo === 'entrevista'; j++); guarda(); x.className = x.value ? '' : 'vac'; $('hablInfo').textContent = t.segs.filter(s => !s.h).length + ' turno(s) sin asignar'; });
+  $$('#segs [data-tx]').forEach(x => { x.onfocus = () => ultimoFoco = x; x.onblur = () => { t.segs[+x.dataset.tx].texto = x.innerText.trim(); guarda(); }; x.onkeydown = e => { if(e.key === 'Enter'){ e.preventDefault(); const i = +x.dataset.tx, sel = window.getSelection(), pos = sel.anchorOffset, full = x.innerText, a = full.slice(0, pos).trim(), b = full.slice(pos).trim(); if(!a || !b) return; const s = t.segs[i]; s.texto = a; t.segs.splice(i + 1, 0, {id:t.id + '-' + uid(''), t0:s.t1 || s.t0, t1:s.t1, h:'', texto:b}); guarda(); pintaSegs(); } }; });
+  $$('#segs [data-un]').forEach(b => b.onclick = () => { const i = +b.dataset.un, a = t.segs[i - 1], s = t.segs[i]; a.texto += ' ' + s.texto; a.t1 = s.t1; t.segs.splice(i, 1); guarda(); pintaSegs(); });
+  $$('#segs [data-play]').forEach(x => x.onclick = () => { const f = MEDIA[t.id]; if(!f) return toast('Vincula el audio de este fichero en el paso 2 para escucharlo'); if(!audioRev || audioRev._id !== t.id){ if(audioRev){ audioRev.pause(); URL.revokeObjectURL(audioRev.src); } audioRev = new Audio(URL.createObjectURL(f)); audioRev._id = t.id; } const s = t.segs[+x.dataset.play]; audioRev.currentTime = Math.max(0, s.t0 - .5); audioRev.play(); clearTimeout(audioRev._t); audioRev._t = setTimeout(() => audioRev.pause(), Math.max(3, (s.t1 - s.t0) + 1.5) * 1000); });
+}
+$('selTrans').onchange = () => { trSel = $('selTrans').value; pintaSegs(); };
+$$('[data-ins]').forEach(b => b.onmousedown = e => { e.preventDefault(); if(!ultimoFoco) return toast('Pon primero el cursor dentro de un turno'); ultimoFoco.focus(); document.execCommand('insertText', false, ' ' + b.dataset.ins + ' '); });
+
+/* ══════════ 4 · ANONIMIZACIÓN (todo local) ══════════ */
+const NOMBRES = 'Aarón Abel Adela Adolfo Adrián Agustín Alba Alberto Alejandra Alejandro Alfonso Alfredo Alicia Alma Álvaro Amalia Amparo Ana Andrea Andrés Ángel Ángela Ángeles Antonia Antonio Ariadna Ariel Arturo Asunción Aurora Beatriz Begoña Belén Benito Bernardo Blanca Bruno Camila Candela Carla Carlos Carmen Carolina Catalina Cayetana Cecilia Celia César Clara Claudia Concepción Consuelo Cristian Cristina Daniel Daniela David Diana Diego Dolores Domingo Dulce Eduardo Elena Elisa Elvira Emilia Emilio Encarnación Enrique Ernesto Esperanza Esteban Estefanía Esther Eugenia Eva Fabián Federico Felipe Fernanda Fernando Francisca Francisco Gabriel Gabriela Gema Gerardo Germán Gloria Gonzalo Gregorio Guadalupe Guillermo Gustavo Héctor Hugo Ignacio Inés Inmaculada Irene Isaac Isabel Iván Jaime Javier Jesús Joaquín Jordi Jorge José Josefa Josep Juan Juana Julia Julián Julio Laura Leire Leonardo Leticia Lidia Lola Lorena Lorenzo Lourdes Lucas Lucía Luciana Luis Luisa Luz Macarena Manuel Manuela Marcela Marcos Margarita María Mariana Marina Mario Marisa Marta Martín Martina Mateo Matías Mercedes Miguel Milagros Mireia Miriam Mónica Montserrat Natalia Nerea Nicolás Noelia Nuria Olga Óscar Pablo Paloma Paola Patricia Paula Pedro Pilar Rafael Ramón Raquel Raúl Rebeca Ricardo Roberto Rocío Rodrigo Rosa Rosario Rubén Salvador Samuel Sandra Santiago Sara Sebastián Sergio Silvia Sofía Soledad Sonia Susana Teresa Tomás Valentina Valeria Vanesa Verónica Vicenta Vicente Víctor Victoria Virginia Xavier Ximena Yolanda'.split(' ');
+const LUGARES = 'Alicante Elche Elx Orihuela Alcoy Benidorm Torrevieja Elda Petrer Villena Denia Valencia València Castellón Vila-real Murcia Cartagena Lorca Madrid Barcelona Sevilla Málaga Granada Córdoba Zaragoza Bilbao Vigo Coruña Santiago Oviedo Gijón Valladolid Salamanca Toledo Albacete Almería Cádiz Huelva Jaén Badajoz Cáceres Palma Tenerife Canarias Pamplona Logroño Santander León Burgos Girona Lleida Tarragona Ourense Lugo Pontevedra Mutxamel Crevillent Aspe Novelda Argentina Rosario Mendoza Tucumán Neuquén Uruguay Montevideo México Colombia Bogotá Chile Lima Perú'.split(' ');
+const PALABRAS_COMUNES = new Set('Bueno Pues Entonces Claro Mira Mirá Oye Vale Sí No Yo Tú Vos Él Ella Nosotros Nosotras Ellos Ellas Y O Pero Porque Cuando Que Qué Cómo Como Dónde Donde Quién Cuál Hay Es Era Fue Esto Eso Aquello Ahí Allí Aquí Ya Al El La Los Las Un Una Lo De Del En Con Por Para Sin Sobre Desde Hasta Mi Mis Su Sus Tu Tus Nos Me Te Se Le Les Dios Navidad Semana Santa Internet WhatsApp Google Lunes Martes Miércoles Jueves Viernes Sábado Domingo Enero Febrero Marzo Abril Mayo Junio Julio Agosto Septiembre Octubre Noviembre Diciembre Seguridad Social Sanidad Educación Ley Dependencia TEA TDAH ELA Down'.split(' '));
+const ci = w => w.split('').map(c => /\p{L}/u.test(c) && c.toLowerCase() !== c.toUpperCase() && w.indexOf(c) === 0 ? `[${c.toUpperCase()}${c.toLowerCase()}]` : c).join('');
+const LUGARES_MULTI = ['Buenos Aires','San Sebastián','Santa Pola','Las Palmas','La Plata','Mar del Plata','Ciudad de México','San Juan','Santa Fe','Entre Ríos','Bahía Blanca','Nueva York','La Vila Joiosa','Sant Joan','San Vicente del Raspeig'];
+const PATRONES = [['LUGAR', new RegExp('\\b(?:' + LUGARES_MULTI.join('|') + ')\\b', 'g')], ['CONTACTO', /[\w.+-]+@[\w-]+\.[\w.-]+/g], ['CONTACTO', /(?:\+\d{2}\s?)?(?:\d[\s.-]?){8,11}\d/g], ['ID', /\b\d{8}[A-HJ-NP-TV-Z]\b|\b[XYZ]\d{7}[A-Z]\b/gi], ['FECHA', /\b\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}\b|\b\d{1,2} de (?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)(?: de \d{4})?\b/gi], ['DIRECCION', new RegExp('(?<![\\p{L}])(?:' + ['calle','avenida','avda.','plaza','paseo','camino','carretera','urbanización','barrio'].map(ci).join('|') + '|[Cc]/)\\s+(?:de\\s+(?:la\\s+|los\\s+|las\\s+)?)?\\p{Lu}[\\p{L}]+(?:\\s+\\p{Lu}[\\p{L}]+)*(?:,?\\s*(?:n[ºo.]\\s*)?\\d+)?', 'gu')],
+  ['CENTRO', new RegExp('(?<![\\p{L}])(?:' + ['hospital','clínica','centro de salud','centro','colegio','cole','instituto','escuela','guardería','residencia','asociación','fundación','universidad','ayuntamiento','parroquia','unidad','servicio'].map(ci).join('|') + ')\\s+(?:(?:de|del|de la|de los|San|Santa|General|Universitario|Público)\\s+)*\\p{Lu}[\\p{L}]+(?:\\s+(?:de\\s+)?\\p{Lu}[\\p{L}]+)*', 'gu')],
+  ['NOMBRE', new RegExp('(?<![\\p{L}])(?:' + ['doctor','doctora','dr.','dra.','don','doña','señor','señora','sr.','sra.','profe','profesor','profesora','maestra','maestro','logopeda','fisio','terapeuta','enfermera','enfermero','tutora','tutor'].map(ci).join('|') + ')\\s+(\\p{Lu}[\\p{L}]+(?:\\s+\\p{Lu}[\\p{L}]+)?)', 'gu')]];
+function detecta(texto){
+  const out = [];
+  PATRONES.forEach(([tipo, rx]) => { for(const m of texto.matchAll(rx)){ const v = (tipo === 'NOMBRE' && m[1] ? m[1] : m[0]).trim().replace(/[.,;:]$/, ''); if(v.length > 2) out.push([v, tipo]); } });
+  const pal = texto.match(/[\p{L}][\p{L}'-]*/gu) || [], frases = new Set(); texto.replace(/(^|[.!?…:]\s+|[¿¡«"“(]\s*|\n)([\p{L}][\p{L}'-]*)/gu, (m, a, w) => { frases.add(w); return m; });
+  pal.forEach(w => { if(/^\p{Lu}/u.test(w) && w.length > 2 && !PALABRAS_COMUNES.has(w)){ if(NOMBRES.includes(w)) out.push([w, 'NOMBRE']); else if(LUGARES.includes(w)) out.push([w, 'LUGAR']); else if(!frases.has(w)) out.push([w, 'NOMBRE?']); } });
+  return out;
+}
+const rxEnt = s => new RegExp('(?<![\\p{L}\\p{N}])' + s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+') + '(?![\\p{L}\\p{N}])', 'giu');
+function anonimiza(texto){ let t = String(texto); [...P.ents].filter(e => e.activo && e.orig.trim()).sort((a,b) => b.orig.length - a.orig.length).forEach(e => { t = t.replace(rxEnt(e.orig), `[${e.sust}]`); }); return t; }
+function reidentifica(texto){ let t = String(texto); P.ents.filter(e => e.activo).forEach(e => { t = t.split(`[${e.sust}]`).join(e.orig); }); return t; }
+function siguienteCodigo(tipo){ const base = tipo.replace('?', ''), n = P.ents.filter(e => e.sust.startsWith(base + '_')).length + 1; return `${base}_${n}`; }
+function addEnt(orig, tipo, origen){ orig = orig.trim(); if(!orig || P.ents.some(e => norm(e.orig) === norm(orig))) return false; const t = tipo.replace('?', ''); P.ents.push({id:uid('n'), orig, tipo:t, sust:siguienteCodigo(t), activo:!/\?$/.test(tipo), dudoso:/\?$/.test(tipo), origen}); return true; }
+function detectaTodo(avisar = true){
+  let n = 0;
+  P.participantes.forEach(p => { if(p.nombre){ const partes = p.nombre.trim().split(/\s+/); if(!P.ents.some(e => norm(e.orig) === norm(p.nombre))){ P.ents.push({id:uid('n'), orig:p.nombre.trim(), tipo:'NOMBRE', sust:p.codigo, activo:true, origen:'participante'}); n++; } partes.forEach(x => { if(x.length > 2 && !P.ents.some(e => norm(e.orig) === norm(x))){ P.ents.push({id:uid('n'), orig:x, tipo:'NOMBRE', sust:p.codigo, activo:true, origen:'participante'}); n++; } }); } });
+  const vistos = {}; todosSegs().forEach(s => detecta(s.texto).forEach(([v,t]) => { const k = norm(v); vistos[k] = vistos[k] || [v, t, 0]; vistos[k][2]++; }));
+  Object.values(vistos).forEach(([v,t]) => { if(addEnt(v, t, 'detección')) n++; });
+  guarda(); if(avisar) toast(n ? `${n} dato(s) nuevo(s) detectado(s). Revisa los marcados como dudosos.` : 'No se han encontrado datos nuevos'); return n;
+}
+function pintaAnon(){
+  if(!P.ents.length && P.trans.length) detectaTodo(false);
+  const ord = [...P.ents].sort((a,b) => (b.dudoso && !b.activo) - (a.dudoso && !a.activo) || a.tipo.localeCompare(b.tipo));
+  $('entCount').textContent = `· ${P.ents.filter(e => e.activo).length} se sustituyen, ${P.ents.filter(e => !e.activo).length} se dejan`;
+  $('ents').innerHTML = ord.length ? `<div class="ent" style="font-weight:800;font-size:11.5px;color:var(--gris);text-transform:uppercase"><span></span><span>En el texto</span><span>Tipo</span><span>Se sustituye por</span><span></span></div>` + ord.map(e => `<div class="ent" style="${e.activo ? '' : 'opacity:.6'}"><input type="checkbox" data-ea="${e.id}" ${e.activo ? 'checked' : ''} aria-label="Sustituir ${esc(e.orig)}"><span><b>${esc(e.orig)}</b>${e.dudoso && !e.activo ? ' <small style="color:#8A5A00">¿es un nombre?</small>' : ''}${e.origen === 'participante' ? ' <small style="color:var(--gris)">participante</small>' : ''}</span><span class="tp">${esc(e.tipo)}</span><input type="text" value="${esc(e.sust)}" data-es="${e.id}" aria-label="Sustituto"><button class="iconbtn" type="button" data-ex="${e.id}" aria-label="Quitar">${ico('trash')}</button></div>`).join('') : '<p class="empty">Sin datos detectados todavía.</p>';
+  $$('#ents [data-ea]').forEach(c => c.onchange = () => { const e = P.ents.find(x => x.id === c.dataset.ea); e.activo = c.checked; e.dudoso = false; guarda(); pintaAnon(); });
+  $$('#ents [data-es]').forEach(c => c.onchange = () => { P.ents.find(x => x.id === c.dataset.es).sust = c.value.replace(/[\[\]]/g, '').trim() || 'DATO'; guarda(); pintaPrev(); });
+  $$('#ents [data-ex]').forEach(b => b.onclick = () => { P.ents = P.ents.filter(x => x.id !== b.dataset.ex); guarda(); pintaAnon(); });
+  $('selPrev').innerHTML = P.trans.map(t => `<option value="${t.id}">${esc(t.nombre)}</option>`).join(''); pintaPrev();
+}
+function pintaPrev(){ const t = P.trans.find(x => x.id === $('selPrev').value) || P.trans[0]; if(!t){ $('prevO').textContent = $('prevA').textContent = ''; return; } const seg = t.segs.slice(0, 40); const act = P.ents.filter(e => e.activo).sort((a,b) => b.orig.length - a.orig.length);
+  $('prevO').innerHTML = seg.map(s => `${esc(s.h || '?')}: ` + act.reduce((h, e) => h.replace(rxEnt(esc(e.orig)), m => `<mark class="pii">${m}</mark>`), esc(s.texto))).join('\n\n');
+  $('prevA').innerHTML = seg.map(s => `${esc(s.h || '?')}: ` + esc(anonimiza(s.texto)).replace(/\[([A-Z]+(?:_\d+)?|P\d+)\]/g, '<mark class="cod">[$1]</mark>')).join('\n\n'); }
+$('selPrev').onchange = pintaPrev;
+$('reDetect').onclick = () => { detectaTodo(true); pintaAnon(); };
+$('entAdd').onclick = () => { const v = $('entNueva').value.trim(); if(!v) return; if(addEnt(v, $('entTipo').value, 'manual')){ $('entNueva').value = ''; guarda(); pintaAnon(); } else toast('Ya estaba en la lista'); };
+
+/* ══════════ IA: solo texto anonimizado y tras confirmación ══════════ */
+const sinIA = () => localStorage.getItem('cualitativia_sinia') === '1';
+async function ia(texto, max = 3500){
+  if(sinIA()) throw new Error('El modo sin IA está activado.');
+  const key = localStorage.getItem('ia_openai_key'); if(!key) throw new Error('Falta la clave de OpenAI (botón «IA», arriba).');
+  const modelo = localStorage.getItem('cualitativia_model') || 'gpt-6-luna', body = {model:modelo, messages:[{role:'system', content:'Eres una investigadora experta en metodología cualitativa en ciencias de la salud y sociales. Trabajas con transcripciones ANONIMIZADAS: los corchetes ([NOMBRE_1], [CENTRO_2], P1…) sustituyen datos personales; no intentes reidentificar a nadie. Responde SOLO con JSON válido.'}, {role:'user', content:texto}], response_format:{type:'json_object'}};
+  if(/^(gpt-[56]|o[1-9])/.test(modelo)){ body.max_completion_tokens = max * 2; body.reasoning_effort = 'medium'; } else { body.temperature = 0.4; body.max_tokens = max; }
+  for(let k = 0; k < 4; k++){
+    let r; try{ r = await fetch('https://api.openai.com/v1/chat/completions', {method:'POST', headers:{'Content-Type':'application/json', Authorization:'Bearer ' + key}, body:JSON.stringify(body)}); }catch(e){ if(k === 3) throw new Error('No hay conexión con OpenAI.'); await sleep(1500); continue; }
+    if(r.ok){ const t = ((await r.json()).choices?.[0]?.message?.content || '').trim(); try{ return JSON.parse(t.replace(/^```(?:json)?|```$/g, '').trim()); }catch(e){ const m = t.match(/\{[\s\S]*\}/); if(m) try{ return JSON.parse(m[0]); }catch(e2){} if(k < 3) continue; throw new Error('Respuesta no válida'); } }
+    const t = await r.text(); if(r.status === 401) throw new Error('OpenAI no reconoce tu clave.'); if(r.status === 429 && /quota|billing/i.test(t)) throw new Error('Tu cuenta de OpenAI no tiene saldo.');
+    if(r.status === 429 || r.status >= 500){ await sleep(2 ** (k + 1) * 1500); continue; } throw new Error('OpenAI ' + r.status);
+  }
+  throw new Error('OpenAI no responde ahora mismo.');
+}
+
+/* ══════════ 5 · ANÁLISIS: árbol con profundidad desigual y citas verificadas ══════════ */
+const LENTES = {
+  tematica:{n:'Temática', d:'Análisis temático reflexivo (Braun y Clarke): temas interpretativos que captan significados compartidos, no resúmenes de lo que se preguntó.', p:'Haz un análisis temático reflexivo (Braun y Clarke). Los temas deben ser interpretativos: patrones de significado compartido que responden a los objetivos, no simples categorías descriptivas de lo preguntado.'},
+  relacional:{n:'Relacional', d:'Codificación inspirada en la teoría fundamentada: condiciones, estrategias, interacciones y consecuencias, con tensiones y relaciones entre categorías.', p:'Haz una codificación relacional inspirada en la teoría fundamentada (Strauss y Corbin): organiza en condiciones, estrategias de afrontamiento, interacciones y consecuencias, y atiende a las tensiones y contradicciones entre participantes.'},
+  teorica:{n:'Desde un marco', d:'Categorías del marco teórico que elijas y, además, códigos emergentes que no encajan en él, marcados como tales.', p:'Codifica desde el marco teórico indicado: usa sus categorías cuando la evidencia las respalde y añade códigos emergentes (con «(emergente)» al final del nombre) para lo que no encaje.'}
+};
+let lentesSel = ['tematica','relacional'], arbolSel = null, verReales = false;
+function pintaAnalisis(){
+  $('lentes').innerHTML = Object.entries(LENTES).map(([k,l]) => `<label class="${lentesSel.includes(k) ? 'on' : ''}"><input type="checkbox" data-le="${k}" ${lentesSel.includes(k) ? 'checked' : ''} hidden><b>${l.n}</b><small>${l.d}</small></label>`).join('');
+  $$('#lentes [data-le]').forEach(c => c.onchange = () => { lentesSel = c.checked ? [...new Set([...lentesSel, c.dataset.le])] : lentesSel.filter(x => x !== c.dataset.le); pintaAnalisis(); });
+  $('marcoWrap').style.display = lentesSel.includes('teorica') ? '' : 'none';
+  const n = todosSegs().filter(s => s.h !== 'MOD').length; $('anInfo').textContent = sinIA() ? 'Modo sin IA activado: el análisis automático está bloqueado.' : `${n} fragmentos de participantes en ${P.trans.length} transcripción(es).`;
+  pintaArboles();
+}
+function corpus(){ return todosSegs().filter(s => s.texto && s.texto.trim()).map(s => ({id:s.id, h:s.h || '?', t:anonimiza(s.texto)})); }
+const lineas = segs => segs.map(s => `${s.id} | ${s.h} | ${s.t}`).join('\n');
+function residuos(segs){ const r = {}; segs.forEach(s => detecta(s.t.replace(/\[[A-Z]+_?\d*\]/g, ' ')).forEach(([v,t]) => { if(t === 'NOMBRE?') return; const k = norm(v); r[k] = r[k] || {v, t, n:0}; r[k].n++; })); return Object.values(r); }
+$('btnAnalizar').onclick = () => {
+  if(sinIA()) return toast('Desactiva el modo sin IA en el botón «IA» para usar el análisis automático');
+  if(!localStorage.getItem('ia_openai_key')){ $('mAjustes').classList.add('on'); return toast('Pega tu clave de OpenAI'); }
+  if(!lentesSel.length) return toast('Elige al menos una interpretación'); if(lentesSel.includes('teorica') && !$('marco').value.trim()) return toast('Indica el marco teórico');
+  const C = corpus(); if(!C.length) return toast('No hay texto que analizar'); if(!P.ents.length && !confirm('No has revisado la anonimización. ¿Seguir igualmente?')) return;
+  const sinH = C.filter(s => s.h === '?').length, R = residuos(C), txt = lineas(C);
+  $('envioInfo').innerHTML = `<p class="sub" style="margin-top:0">Se enviarán <b>${C.length} fragmentos</b> (${(txt.length / 1000).toFixed(0)} mil caracteres) de ${P.trans.length} transcripción(es), con ${P.ents.filter(e => e.activo).length} datos sustituidos por códigos, y los objetivos del estudio. Los nombres de las transcripciones, los nombres reales y los atributos de los participantes no se envían.</p>${R.length ? `<div class="aviso"><b>Posibles datos personales que siguen en el texto:</b> ${R.slice(0, 25).map(x => `«${esc(x.v)}» (${esc(x.t)})`).join(', ')}. Vuelve al paso 4 si alguno debe sustituirse.</div>` : `<div class="okbox">${ico('check')}<span>La comprobación final no encuentra datos personales sin sustituir.</span></div>`}${sinH ? `<div class="aviso">${sinH} fragmentos no tienen hablante asignado.</div>` : ''}`;
+  $('envioTxt').textContent = (P.objetivos ? 'OBJETIVOS: ' + anonimiza(P.objetivos) + '\n\n' : '') + txt.slice(0, 6000) + (txt.length > 6000 ? `\n\n… (y ${((txt.length - 6000) / 1000).toFixed(0)} mil caracteres más, con el mismo tratamiento)` : '');
+  $('envioOk').checked = false; $('envioSi').disabled = true; $('mEnvio').classList.add('on');
+};
+$('envioOk').onchange = () => { $('envioSi').disabled = !$('envioOk').checked; };
+$('envioSi').onclick = () => { $('mEnvio').classList.remove('on'); analizar(); };
+function anLog(t, c = ''){ $('anLog').insertAdjacentHTML('beforeend', `<div>${c === 'ok' ? '✓' : c === 'ko' ? '⚠' : '·'} ${esc(t)}</div>`); }
+function validaCitas(citas, permitidos, mapa){ const out = []; (citas || []).forEach(c => { const s = mapa[c.seg]; if(!s || !permitidos.includes(c.seg)) return; const f = String(c.texto || '').trim(); if(f.length < 8) return; if(norm(s.t).includes(norm(f))) out.push({seg:c.seg, texto:f}); }); return out; }
+async function analizar(){
+  trabajando = true; updateNav(); $('anLog').innerHTML = ''; const C = corpus(), mapa = Object.fromEntries(C.map(s => [s.id, s])), ids = new Set(C.map(s => s.id)), maxN = +$('maxNiv').value, minS = +$('minSeg').value, tope = +$('tope').value, obj = anonimiza(P.objetivos || '(no indicados)');
+  let descartadas = 0;
+  try{
+    for(const lk of lentesSel){
+      const L = LENTES[lk], marco = lk === 'teorica' ? $('marco').value.trim() : ''; let llamadas = 0;
+      anLog(`Interpretación ${L.n}: códigos de primer nivel…`);
+      const lotes = []; let cur = []; C.forEach(s => { cur.push(s); if(lineas(cur).length > 38000){ lotes.push(cur); cur = []; } }); if(cur.length) lotes.push(cur);
+      const PIDE = `Devuelve {"codigos":[{"nombre":"","definicion":"qué recoge y qué no","segmentos":["T1-3"],"citas":[{"seg":"T1-3","texto":"fragmento LITERAL copiado del segmento"}]}]}`;
+      const REGLAS = `REGLAS: usa solo los identificadores de segmento que aparecen; las citas deben ser fragmentos copiados literalmente (sin cambiar ni una palabra) del segmento indicado, de 10 a 40 palabras, elegidos porque ilustran bien el código; no codifiques las intervenciones de MOD salvo que aporten contenido. ${L.p}${marco ? ' MARCO TEÓRICO: ' + marco : ''}`;
+      let N1;
+      if(lotes.length === 1){ N1 = (await ia(`OBJETIVOS DEL ESTUDIO: ${obj}\n\nPropón entre 4 y 8 códigos de primer nivel y asígnales sus segmentos.\n${REGLAS}\n${PIDE}\n\nTRANSCRIPCIONES (id | hablante | texto):\n${lineas(C)}`, 6000)).codigos || []; llamadas++; }
+      else { const cand = []; for(const [i,l] of lotes.entries()){ anLog(`  Lote ${i + 1} de ${lotes.length}…`); cand.push(...((await ia(`OBJETIVOS: ${obj}\nPropón códigos de primer nivel para este lote.\n${REGLAS}\nDevuelve {"codigos":[{"nombre":"","definicion":""}]}\n\n${lineas(l)}`, 3000)).codigos || [])); llamadas++; }
+        const U = (await ia(`OBJETIVOS: ${obj}\nUnifica estos códigos candidatos de varios lotes en 4-8 códigos de primer nivel, fusionando los equivalentes. ${L.p}\nDevuelve {"codigos":[{"nombre":"","definicion":""}]}\n\n${JSON.stringify(cand)}`, 2500)).codigos || []; llamadas++;
+        N1 = U.map(u => ({...u, segmentos:[], citas:[]})); for(const l of lotes){ const a = await ia(`Asigna cada segmento a los códigos que le correspondan (puede ser ninguno o varios) y elige citas literales.\nCÓDIGOS: ${JSON.stringify(U)}\n${REGLAS}\nDevuelve {"asignacion":[{"codigo":"nombre exacto","segmentos":["T1-3"],"citas":[{"seg":"","texto":""}]}]}\n\n${lineas(l)}`, 5000); llamadas++; (a.asignacion || []).forEach(x => { const c = N1.find(n => norm(n.nombre) === norm(x.codigo)); if(c){ c.segmentos.push(...(x.segmentos || [])); c.citas.push(...(x.citas || [])); } }); } }
+      const mk = (c, nivel) => { const segs = [...new Set((c.segmentos || []).filter(id => ids.has(id)))], citas = validaCitas(c.citas, segs, mapa); descartadas += (c.citas || []).length - citas.length; return {id:uid('c'), nombre:String(c.nombre || '').trim() || 'Sin nombre', definicion:c.definicion || '', segs, citas, hijos:[], nivel, cierre:''}; };
+      const raiz = N1.map(c => mk(c, 1)).filter(c => c.segs.length);
+      anLog(`  ${raiz.length} códigos de primer nivel`, 'ok');
+      const profundiza = async (nodo, ruta) => {
+        if(nodo.segs.length < minS){ nodo.cierre = 'pocos fragmentos'; return; } if(nodo.nivel >= maxN){ nodo.cierre = 'profundidad máxima'; return; } if(llamadas >= tope){ nodo.cierre = 'tope de consultas'; return; }
+        const S = nodo.segs.map(id => mapa[id]).filter(Boolean); llamadas++;
+        const r = await ia(`OBJETIVOS: ${obj}\nRUTA EN EL ÁRBOL: ${[...ruta, nodo.nombre].join(' > ')}\nCÓDIGO: ${nodo.nombre}: ${nodo.definicion}\n\n¿Contienen estos fragmentos SUBTEMAS realmente distintos, cada uno con evidencia propia en al menos ${minS > 2 ? 2 : 1} fragmentos? Profundiza solo si aporta matices analíticos nuevos (no repartas por repartir ni subdividas por participante). Si las ideas se agotan aquí, responde saturado=true.\n${REGLAS}\nDevuelve {"saturado":false,"motivo":"por qué se detiene o por qué se subdivide","subcodigos":[{"nombre":"","definicion":"","segmentos":[""],"citas":[{"seg":"","texto":""}]}]}\n\nFRAGMENTOS (id | hablante | texto):\n${lineas(S).slice(0, 30000)}`, 4000);
+        const hijos = r.saturado ? [] : (r.subcodigos || []).map(c => { const h = mk(c, nodo.nivel + 1); h.segs = h.segs.filter(id => nodo.segs.includes(id)); h.citas = h.citas.filter(x => h.segs.includes(x.seg)); return h; }).filter(h => h.segs.length);
+        if(hijos.length < 2){ nodo.cierre = 'ideas agotadas' + (r.motivo ? ': ' + r.motivo : ''); return; }
+        nodo.hijos = hijos; nodo.motivo = r.motivo || ''; anLog(`  ${'·'.repeat(nodo.nivel)} «${nodo.nombre}» → ${hijos.length} subcódigos`);
+        for(const h of hijos) await profundiza(h, [...ruta, nodo.nombre]);
+      };
+      for(const n of raiz) await profundiza(n, []);
+      let rel = [];
+      if(lk !== 'tematica' && raiz.length > 1 && llamadas < tope + 2){ const nombres = []; const rec = (ns) => ns.forEach(n => { if(n.nivel <= 2) nombres.push(n.nombre); rec(n.hijos); }); rec(raiz);
+        const r = await ia(`Identifica relaciones analíticas entre estos códigos (condición, causa, consecuencia, estrategia ante, tensión con, contradice), solo si hay evidencia en los fragmentos.\nCÓDIGOS: ${nombres.join(' | ')}\nDevuelve {"relaciones":[{"de":"nombre exacto","a":"nombre exacto","tipo":"","explicacion":"","segmentos":[""]}]}\n\n${lineas(C).slice(0, 30000)}`, 2500);
+        rel = (r.relaciones || []).filter(x => nombres.some(n => norm(n) === norm(x.de)) && nombres.some(n => norm(n) === norm(x.a))).map(x => ({...x, segmentos:(x.segmentos || []).filter(id => ids.has(id))})); }
+      const prof = (ns) => Math.max(0, ...ns.map(n => n.hijos.length ? prof(n.hijos) : n.nivel));
+      P.arboles.push({id:uid('A'), lente:lk, nombre:L.n + (marco ? ` · ${marco}` : ''), fecha:new Date().toISOString(), codigos:raiz, relaciones:rel, llamadas, opciones:{maxN, minS}});
+      anLog(`${L.n}: ${raiz.length} códigos, profundidad máxima ${prof(raiz)}, ${llamadas} consultas`, 'ok');
+    }
+    if(descartadas) anLog(`${descartadas} cita(s) descartada(s) por no aparecer literalmente en su segmento`, 'ko');
+    arbolSel = P.arboles[P.arboles.length - 1].id; guarda(); toast('Análisis terminado');
+  }catch(e){ anLog(e.message, 'ko'); toast(e.message, 6000); }
+  finally{ trabajando = false; updateNav(); pintaArboles(); }
+}
+function contar(n){ return 1 + n.hijos.reduce((s,h) => s + contar(h), 0); }
+function pintaArboles(){
+  if(!P.arboles.length){ $('tabs').innerHTML = ''; $('arbol').innerHTML = '<p class="empty">Aún no hay árboles. Elige interpretaciones y analiza.</p>'; $('arbolSide').innerHTML = ''; return; }
+  if(!P.arboles.some(a => a.id === arbolSel)) arbolSel = P.arboles[0].id;
+  $('tabs').innerHTML = P.arboles.map(a => `<button type="button" data-ab="${a.id}" aria-pressed="${a.id === arbolSel}">${esc(a.nombre)} · ${a.codigos.reduce((s,c) => s + contar(c), 0)} códigos</button>`).join('') + `<label style="display:flex;gap:6px;align-items:center;font-size:13px;margin-left:auto"><input type="checkbox" id="verReales" ${verReales ? 'checked' : ''}> ver citas con datos reales (solo en pantalla)</label>`;
+  $$('#tabs [data-ab]').forEach(b => b.onclick = () => { arbolSel = b.dataset.ab; pintaArboles(); });
+  $('verReales').onchange = () => { verReales = $('verReales').checked; pintaArboles(); };
+  const A = P.arboles.find(a => a.id === arbolSel), partes = id => { const s = segPorId(id); return s ? s.h : '?'; };
+  const nodoH = (n) => { const ps = [...new Set(n.segs.map(partes).filter(h => h && h !== 'MOD'))]; return `<div class="nodo" style="--d:${n.nivel - 1}"><div class="t" data-tog="${n.id}"><b>${esc(n.nombre)}</b><span class="c">${n.segs.length} frag. · ${ps.length} part.</span>${n.hijos.length ? '' : `<span class="sat" title="${esc(n.cierre)}">${esc((n.cierre || '').split(':')[0])}</span>`}<button class="iconbtn" type="button" data-ren="${n.id}" title="Renombrar" style="margin-left:auto">${ico('pencil')}</button><button class="iconbtn" type="button" data-del="${n.id}" title="Quitar">${ico('trash')}</button></div><div class="def">${esc(n.definicion)}</div><div id="cit-${n.id}" class="hidden">${n.citas.map(c => `<div class="cita">«${esc(verReales ? reidentifica(c.texto) : c.texto)}»<small>${esc(c.seg)} · ${esc(partes(c.seg))}</small></div>`).join('') || '<p class="help">Sin citas verificadas para este código.</p>'}</div></div>${n.hijos.map(nodoH).join('')}`; };
+  $('arbol').innerHTML = `<p class="help" style="margin-top:0">Pulsa un código para ver sus citas literales. La etiqueta gris indica por qué se detuvo esa rama.</p>` + A.codigos.map(nodoH).join('');
+  $$('#arbol [data-tog]').forEach(t => t.onclick = e => { if(e.target.closest('button')) return; $('cit-' + t.dataset.tog).classList.toggle('hidden'); });
+  const busca = (ns, id, pad) => { for(const [i,n] of ns.entries()){ if(n.id === id) return [ns, i]; const r = busca(n.hijos, id); if(r) return r; } return null; };
+  $$('#arbol [data-ren]').forEach(b => b.onclick = () => { const [ns,i] = busca(A.codigos, b.dataset.ren), v = prompt('Nuevo nombre del código', ns[i].nombre); if(v){ ns[i].nombre = v.trim(); guarda(); pintaArboles(); } });
+  $$('#arbol [data-del]').forEach(b => b.onclick = () => { const [ns,i] = busca(A.codigos, b.dataset.del); if(confirm(`¿Quitar «${ns[i].nombre}» y sus subcódigos?`)){ ns.splice(i, 1); guarda(); pintaArboles(); } });
+  const niveles = {}; const rec = ns => ns.forEach(n => { if(!n.hijos.length) niveles[n.nivel] = (niveles[n.nivel] || 0) + 1; rec(n.hijos); }); rec(A.codigos);
+  $('arbolSide').innerHTML = `<h3><svg class="i"><use href="#i-grid"/></svg>Esta interpretación</h3><p class="sub">${esc(LENTES[A.lente]?.d || '')}</p><p class="help">Ramas terminadas por nivel: ${Object.entries(niveles).map(([k,v]) => `nivel ${k}: ${v}`).join(' · ')}. ${A.llamadas ? A.llamadas + ' consultas.' : ''}</p>${(A.relaciones || []).length ? `<p class="sublab">Relaciones entre códigos</p>${A.relaciones.map(r => `<div class="rel"><b>${esc(r.de)}</b> <i>${esc(r.tipo)}</i> <b>${esc(r.a)}</b><br><span class="help" style="margin:0">${esc(r.explicacion)}${r.segmentos?.length ? ' · ' + esc(r.segmentos.join(', ')) : ''}</span></div>`).join('')}` : ''}<button class="btn btn-ghost btn-sm" type="button" id="borrarArbol" style="margin-top:10px">${ico('trash')}Borrar esta interpretación</button>`;
+  $('borrarArbol').onclick = () => { if(confirm('¿Borrar esta interpretación?')){ P.arboles = P.arboles.filter(a => a.id !== A.id); guarda(); pintaArboles(); } };
+}
+
+/* ══════════ 6 · MÉTODOS MIXTOS (local) ══════════ */
+function listaCodigos(A, maxNiv){ const out = []; const rec = (ns, ruta) => ns.forEach(n => { if(n.nivel <= maxNiv) out.push({nombre:[...ruta, n.nombre].join(' > '), corto:n.nombre, segs:n.segs, nivel:n.nivel}); rec(n.hijos, [...ruta, n.nombre]); }); rec(A.codigos, []); return out; }
+function matriz(){ const A = P.arboles.find(a => a.id === $('selMx').value); if(!A) return null; const cods = listaCodigos(A, +$('nivMx').value), parts = P.participantes.filter(p => p.codigo), hab = {}; todosSegs().forEach(s => hab[s.id] = s.h); return {A, cods, parts, n:(c,p) => c.segs.filter(id => hab[id] === p.codigo).length}; }
+function pintaMixtos(){
+  $('selMx').innerHTML = P.arboles.map(a => `<option value="${a.id}">${esc(a.nombre)}</option>`).join('') || '<option>(sin árboles)</option>';
+  const M = matriz(); if(!M){ $('mx1').innerHTML = $('mx2').innerHTML = '<p class="empty">Primero genera un árbol en el paso 5.</p>'; return; }
+  $('mx1').innerHTML = `<table class="mx"><thead><tr><th class="l">Código</th>${M.parts.map(p => `<th>${esc(p.codigo)}</th>`).join('')}<th>Total</th></tr></thead><tbody>${M.cods.map(c => { const v = M.parts.map(p => M.n(c, p)), mx = Math.max(1, ...v); return `<tr><td class="l" style="padding-left:${(c.nivel - 1) * 14 + 7}px">${esc(c.corto)}</td>${v.map(x => `<td style="background:rgba(14,140,122,${(x / mx * .35).toFixed(2)})">${x || ''}</td>`).join('')}<td><b>${v.reduce((a,b) => a + b, 0)}</b></td></tr>`; }).join('')}</tbody></table>`;
+  const grupos = [...new Set(M.parts.map(p => p.attr || '(sin dato)'))]; $('mx2t').textContent = `Códigos × ${P.attrName || 'atributo'}`;
+  $('mx2').innerHTML = `<table class="mx"><thead><tr><th class="l">Código</th>${grupos.map(g => `<th>${esc(g)} <small>(n=${M.parts.filter(p => (p.attr || '(sin dato)') === g).length})</small></th>`).join('')}</tr></thead><tbody>${M.cods.map(c => `<tr><td class="l" style="padding-left:${(c.nivel - 1) * 14 + 7}px">${esc(c.corto)}</td>${grupos.map(g => { const ps = M.parts.filter(p => (p.attr || '(sin dato)') === g), k = ps.filter(p => M.n(c, p) > 0).length, pc = ps.length ? Math.round(k / ps.length * 100) : 0; return `<td style="background:rgba(31,111,178,${(pc / 100 * .3).toFixed(2)})">${k}/${ps.length} · ${pc} %</td>`; }).join('')}</tr>`).join('')}</tbody></table>`;
+}
+$('selMx').onchange = pintaMixtos; $('nivMx').onchange = pintaMixtos;
+$('expMx').onclick = () => { const M = matriz(); if(!M) return; const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`; dl('cualitativia_matriz.csv', '\ufeff' + [['participante', P.attrName || 'atributo', 'rol', ...M.cods.map(c => c.nombre)].map(q).join(';'), ...M.parts.map(p => [p.codigo, p.attr, p.rol, ...M.cods.map(c => M.n(c, p))].map(q).join(';'))].join('\r\n'), 'text/csv;charset=utf-8'); toast('Matriz exportada (sin nombres reales)'); };
+
+/* ══════════ 7 · EXPORTACIONES ══════════ */
+const version = () => ($$('input[name="vers"]:checked')[0] || {}).value || 'anon';
+const textoSeg = s => version() === 'anon' ? anonimiza(s.texto) : s.texto;
+const nombreHab = h => { if(h === 'MOD') return 'Moderadora'; if(version() === 'anon') return h || '?'; const p = P.participantes.find(x => x.codigo === h); return p?.nombre || h || '?'; };
+const lineaMaxqda = s => `#${hms(s.t0)}-0# ${nombreHab(s.h)}: ${textoSeg(s)}`;
+function pintaExport(){ $('selExp').innerHTML = P.arboles.map(a => `<option value="${a.id}">${esc(a.nombre)}</option>`).join('') || '<option value="">(sin árboles)</option>'; }
+const base = () => 'cualitativia_' + norm(P.titulo || 'estudio').replace(/ /g, '_').slice(0, 30);
+$('expTxt').onclick = () => { if(!P.trans.length) return toast('No hay transcripciones'); P.trans.forEach((t,i) => setTimeout(() => dl(`${(version() === 'anon' ? t.id : t.nombre).replace(/[^\w-]+/g, '_')}_${version()}.txt`, '\ufeff' + t.segs.map(lineaMaxqda).join('\r\n\r\n'), 'text/plain;charset=utf-8'), i * 400)); };
+async function docxLib(){ if(!window.docx) await cargaLib(['https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js']); return window.docx; }
+const Pd = (D, t, o = {}) => new D.Paragraph({heading:o.h, pageBreakBefore:o.pb, spacing:{after:o.after ?? 100}, indent:o.ind ? {left:o.ind} : undefined, children:[new D.TextRun({text:String(t ?? ''), font:'Arial', size:o.s || 22, bold:o.b, italics:o.i, color:o.c})]});
+$('expTransDocx').onclick = async () => { try{ const D = await docxLib(), k = []; P.trans.forEach((t,i) => { k.push(Pd(D, version() === 'anon' ? t.id : t.nombre, {h:D.HeadingLevel.HEADING_1, pb:i > 0})); t.segs.forEach(s => k.push(new D.Paragraph({spacing:{after:120}, children:[new D.TextRun({text:`${hms(s.t0)}  `, font:'Consolas', size:18, color:'5D7691'}), new D.TextRun({text:nombreHab(s.h) + ': ', bold:true, font:'Arial', size:22}), new D.TextRun({text:textoSeg(s), font:'Arial', size:22})]}))); }); dl(base() + '_transcripciones_' + version() + '.docx', await D.Packer.toBlob(new D.Document({creator:'CualitativIA', sections:[{children:k}]}))); }catch(e){ toast(e.message); } };
+const guid = () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, () => (Math.random() * 16 | 0).toString(16))).toUpperCase();
+function codesXml(A, map){ const rec = ns => ns.map(n => { const g = guid(); map[n.id] = g; return `<Code guid="${g}" name="${xesc(n.nombre)}" isCodable="true"><Description>${xesc(n.definicion || '')}</Description>${rec(n.hijos)}</Code>`; }).join(''); return `<Codes>${rec(A.codigos)}</Codes>`; }
+$('expQdc').onclick = () => { const A = P.arboles.find(a => a.id === $('selExp').value); if(!A) return toast('Genera antes un árbol'); dl(base() + '_codigos.qdc', `<?xml version="1.0" encoding="utf-8"?>\n<CodeBook xmlns="urn:QDA-XML:codebook:1.0" origin="CualitativIA">${codesXml(A, {})}</CodeBook>`, 'application/xml'); };
+$('expQdpx').onclick = async () => {
+  const A = P.arboles.find(a => a.id === $('selExp').value); if(!A) return toast('Genera antes un árbol');
+  try{ await cargaLib(['https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js']); const z = new JSZip(), U = guid(), map = {}, codes = codesXml(A, map), porSeg = {};
+    const rec = ns => ns.forEach(n => { n.segs.forEach(id => (porSeg[id] = porSeg[id] || []).push(map[n.id])); rec(n.hijos); }); rec(A.codigos);
+    const fuentes = P.trans.map(t => { const g = guid(); let txt = '', sel = ''; t.segs.forEach(s => { const pre = `${nombreHab(s.h)}: `, cuerpo = textoSeg(s), ini = [...txt].length + [...pre].length, fin = ini + [...cuerpo].length; txt += pre + cuerpo + '\n\n'; (porSeg[s.id] || []).forEach(cg => { sel += `<PlainTextSelection guid="${guid()}" name="${xesc(s.id)}" startPosition="${ini}" endPosition="${fin}" creatingUser="${U}"><Coding guid="${guid()}" creatingUser="${U}"><CodeRef targetGUID="${cg}"/></Coding></PlainTextSelection>`; }); }); z.file(`sources/${g}.txt`, txt); return `<TextSource guid="${g}" name="${xesc(version() === 'anon' ? t.id : t.nombre)}" plainTextPath="internal://${g}.txt" creatingUser="${U}">${sel}</TextSource>`; }).join('');
+    z.file('project.qde', `<?xml version="1.0" encoding="utf-8"?>\n<Project name="${xesc(P.titulo || 'Estudio')}" origin="CualitativIA" creatingUserGUID="${U}" creationDateTime="${new Date().toISOString().split('.')[0]}Z" xmlns="urn:QDA-XML:project:1.0"><Users><User guid="${U}" name="CualitativIA"/></Users><CodeBook>${codes}</CodeBook><Sources>${fuentes}</Sources></Project>`);
+    dl(base() + '_' + version() + '.qdpx', await z.generateAsync({type:'blob'})); toast('Proyecto REFI-QDA generado: ábrelo en MAXQDA con «Importar proyecto REFI-QDA»', 6000); }
+  catch(e){ toast(e.message); }
+};
+$('expInf').onclick = async () => {
+  const A = P.arboles.find(a => a.id === $('selExp').value); if(!A) return toast('Genera antes un árbol');
+  try{ const D = await docxLib(), k = [Pd(D, P.titulo || 'Estudio', {h:D.HeadingLevel.TITLE}), Pd(D, `Árbol de códigos · ${A.nombre} · ${new Date(A.fecha).toLocaleDateString('es-ES')}`, {i:true, c:'5D7691'}), Pd(D, LENTES[A.lente]?.d || '', {i:true, s:20})];
+    const rec = ns => ns.forEach(n => { k.push(Pd(D, n.nombre, {h:[D.HeadingLevel.HEADING_1, D.HeadingLevel.HEADING_2, D.HeadingLevel.HEADING_3, D.HeadingLevel.HEADING_4, D.HeadingLevel.HEADING_5][Math.min(4, n.nivel - 1)]})); if(n.definicion) k.push(Pd(D, n.definicion, {i:true})); k.push(Pd(D, `${n.segs.length} fragmentos${n.hijos.length ? '' : ' · ' + (n.cierre || '')}`, {s:18, c:'5D7691'})); n.citas.forEach(c => { const s = segPorId(c.seg); k.push(Pd(D, `«${version() === 'anon' ? c.texto : reidentifica(c.texto)}» (${nombreHab(s?.h)}, ${c.seg})`, {ind:500, s:20})); }); rec(n.hijos); }); rec(A.codigos);
+    if((A.relaciones || []).length){ k.push(Pd(D, 'Relaciones entre códigos', {h:D.HeadingLevel.HEADING_1})); A.relaciones.forEach(r => k.push(Pd(D, `${r.de} — ${r.tipo} → ${r.a}: ${r.explicacion}`))); }
+    k.push(Pd(D, 'Propuesta generada con apoyo de IA sobre texto anonimizado y revisada por la investigadora. Las citas se han verificado literalmente contra las transcripciones.', {i:true, s:18, c:'5D7691'}));
+    dl(base() + '_informe_' + version() + '.docx', await D.Packer.toBlob(new D.Document({creator:'CualitativIA', sections:[{children:k}]}))); }
+  catch(e){ toast(e.message); }
+};
+$('expJson').onclick = () => { if(!confirm('La copia completa contiene datos reales (nombres y transcripciones originales). ¿Descargarla?')) return; const {_demo, ...r} = P; dl(base() + '_COPIA_CON_DATOS_REALES.json', JSON.stringify(r), 'application/json'); };
+$('expClave').onclick = () => { if(!confirm('La clave permite reidentificar a las personas. Guárdala separada de las transcripciones anonimizadas. ¿Descargarla?')) return; const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`; dl(base() + '_CLAVE_REIDENTIFICACION.csv', '\ufeff' + ['codigo;dato original;tipo', ...P.ents.filter(e => e.activo).map(e => [e.sust, e.orig, e.tipo].map(q).join(';')), ...P.participantes.filter(p => p.nombre).map(p => [p.codigo, p.nombre, 'PARTICIPANTE'].map(q).join(';'))].join('\r\n'), 'text/csv;charset=utf-8'); };
+
+/* ══════════ MIS ESTUDIOS, AJUSTES, AYUDA, EJEMPLO ══════════ */
+$('btnProy').onclick = async () => { const all = ((await tx('readonly', s => s.getAll())) || []).sort((a,b) => (b.actualizado || 0) - (a.actualizado || 0)); $('proys').innerHTML = all.length ? all.map(p => `<div style="display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--linea-2)"><div style="flex:1"><b style="font-size:14px">${esc(p.titulo || 'Sin título')}</b><div class="help" style="margin:0">${p.trans.length} transcripción(es) · ${p.arboles.length} árbol(es) · ${new Date(p.actualizado || p.creado).toLocaleString('es-ES')}</div></div><button class="btn btn-primary btn-sm" data-ab="${p.id}">Abrir</button><button class="btn btn-ghost btn-sm" data-bo="${p.id}">${ico('trash')}</button></div>`).join('') : '<p class="help">Aún no hay estudios guardados.</p>';
+  $$('#proys [data-ab]').forEach(b => b.onclick = () => { P = all.find(x => x.id === b.dataset.ab); $('mProy').classList.remove('on'); go(P.arboles.length ? 5 : P.trans.length ? 3 : 1); });
+  $$('#proys [data-bo]').forEach(b => b.onclick = async () => { if(!confirm('¿Borrar este estudio de este navegador?')) return; await tx('readwrite', s => s.delete(b.dataset.bo)); $('btnProy').click(); });
+  $('mProy').classList.add('on'); };
+$('fileJson').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if(!f) return; try{ const d = JSON.parse(await f.text()); if(!Array.isArray(d.trans)) throw new Error(); P = d; guarda(); $('mProy').classList.remove('on'); go(3); }catch(err){ toast('No es una copia de CualitativIA'); } };
+$('btnAjustes').onclick = () => { $('apiKey').value = localStorage.getItem('ia_openai_key') || ''; $('modelo').value = localStorage.getItem('cualitativia_model') || 'gpt-6-luna'; $('sinIA').checked = sinIA(); $('mAjustes').classList.add('on'); };
+$('apiKey').oninput = () => localStorage.setItem('ia_openai_key', $('apiKey').value.trim());
+$('modelo').onchange = () => localStorage.setItem('cualitativia_model', $('modelo').value);
+$('sinIA').onchange = () => { localStorage.setItem('cualitativia_sinia', $('sinIA').checked ? '1' : '0'); if(step === 5) pintaAnalisis(); };
+$('btnEye').onclick = () => { const k = $('apiKey'); k.type = k.type === 'password' ? 'text' : 'password'; };
+const GLOS = [['Transcripción local','Chrome reconoce la voz en tu ordenador con processLocally = true: si el idioma no está instalado, no se usa la nube. Va al ritmo de la grabación; una hora de audio tarda una hora.'],['Quién habla','El reconocimiento de voz no distingue voces. La app corta en turnos por las pausas y tú asignas cada turno, escuchando el fragmento si lo necesitas.'],['Anonimizar','Sustituir nombres, lugares, centros, fechas o contactos por códigos ([NOMBRE_1], [CENTRO_2], P1…). La correspondencia (clave) se queda en tu ordenador.'],['Qué sale a OpenAI','Solo si pides el análisis automático, y solo el texto anonimizado y los objetivos, tras enseñártelo y volver a buscar datos personales. La página no puede conectar con ningún otro servidor: lo impide su política de seguridad (Content-Security-Policy).'],['Profundidad desigual','Cada rama se subdivide solo mientras haya subtemas con evidencia propia; cuando las ideas se agotan, se detiene y lo indica. Por eso unas ramas tienen un nivel y otras cuatro.'],['Interpretaciones','La misma información leída de varias maneras: temática, relacional o desde un marco teórico. Compáralas y quédate con lo que te sirva.'],['Citas verificadas','La IA solo puede citar fragmentos de segmentos reales. La app comprueba que cada cita aparece literalmente en su segmento y descarta las que no.'],['MAXQDA','Exporta el libro de códigos y el proyecto en el estándar REFI-QDA (MAXQDA, ATLAS.ti, NVivo), y las transcripciones con marcas de tiempo #hh:mm:ss-0#.'],['Métodos mixtos','Matrices de códigos por participante y por atributo, calculadas en tu ordenador y exportables a SPSS o R.']];
+$('glos').innerHTML = GLOS.map(g => `<div><b>${esc(g[0])}</b><span>${esc(g[1])}</span></div>`).join('');
+$('btnHelp').onclick = () => $('mHelp').classList.add('on');
+$$('.modal').forEach(m => m.addEventListener('click', e => { if(e.target === m || e.target.hasAttribute('data-close')) m.classList.remove('on'); }));
+document.addEventListener('keydown', e => { if(e.key === 'Escape') $$('.modal').forEach(m => m.classList.remove('on')); });
+const DEMO = {"id": "demo", "titulo": "Experiencias de familias de personas con discapacidad (ejemplo ficticio)", "objetivos": "Explorar cómo viven las familias el proceso que sigue al diagnóstico, su relación con los servicios y su visión del futuro.", "attrName": "Diagnóstico del familiar", "participantes": [{"codigo": "P1", "nombre": "Ana Martínez", "rol": "Madre", "attr": "TEA"}, {"codigo": "P2", "nombre": "Javier López", "rol": "Padre", "attr": "Parálisis cerebral"}, {"codigo": "P3", "nombre": "Rosa Giménez", "rol": "Madre", "attr": "TEA"}, {"codigo": "P4", "nombre": "Manuel Sánchez", "rol": "Abuelo", "attr": "Síndrome de Down"}], "trans": [{"id": "T1", "nombre": "Grupo focal familias", "fichero": "", "idioma": "es-ES", "tipo": "grupo", "segs": [{"id": "T1-1", "t0": 0, "t1": 40, "h": "MOD", "texto": "Gracias por venir. Para empezar, ¿cómo vivisteis el momento en que os dieron el diagnóstico?"}, {"id": "T1-2", "t0": 42, "t1": 82, "h": "P1", "texto": "Yo soy Ana y mi hija Lucía tiene autismo. Nos lo dijeron en el Hospital General de Elche cuando tenía tres años."}, {"id": "T1-3", "t0": 84, "t1": 124, "h": "P1", "texto": "Me acuerdo de que la doctora Ruiz nos lo soltó en el pasillo, de pie, en dos minutos. Salí de allí sin saber ni qué preguntar. [llora]"}, {"id": "T1-4", "t0": 126, "t1": 166, "h": "P2", "texto": "A nosotros igual, nadie se sentó con nosotros. Te dan un papel con una palabra que no entiendes y te mandan a casa sin ninguna explicación."}, {"id": "T1-5", "t0": 168, "t1": 208, "h": "P3", "texto": "Mirá, yo lo primero que pensé fue qué había hecho mal en el embarazo. Esa culpa no se va nunca del todo, vos sabés."}, {"id": "T1-6", "t0": 210, "t1": 250, "h": "P4", "texto": "Mi hija también se preguntaba eso todas las noches. Y yo, como abuelo, no sabía qué decirle para que dejara de culparse."}, {"id": "T1-7", "t0": 252, "t1": 292, "h": "MOD", "texto": "¿Y después del diagnóstico, cómo ha sido el camino con las ayudas y los servicios?"}, {"id": "T1-8", "t0": 294, "t1": 334, "h": "P2", "texto": "Un infierno de papeles. Para la valoración de dependencia esperamos casi dos años, y cuando llegó la resolución el niño ya necesitaba otra cosa."}, {"id": "T1-9", "t0": 336, "t1": 376, "h": "P1", "texto": "Yo tengo una carpeta así de gorda. Cada vez que cambias de profesional tienes que volver a contar toda la historia desde el principio."}, {"id": "T1-10", "t0": 378, "t1": 418, "h": "P3", "texto": "Y te miran como si exageraras. En la entrevista de valoración me sentí examinada, como si tuviera que demostrar que mi hijo de verdad lo necesita."}, {"id": "T1-11", "t0": 420, "t1": 460, "h": "P4", "texto": "Al colegio Miguel Hernández lo llaman inclusivo, pero el primer año el niño estaba más tiempo en el pasillo con una monitora que en clase con sus compañeros."}, {"id": "T1-12", "t0": 462, "t1": 502, "h": "P2", "texto": "La inclusión está en el papel. Cuando hay excursión, a nosotros nos llaman para que vayamos nosotros o que el niño se quede en casa."}, {"id": "T1-13", "t0": 504, "t1": 544, "h": "P1", "texto": "Lo que nos salvó fue la logopeda del centro de atención temprana. Ella sí nos explicaba las cosas y nos trataba como parte del equipo."}, {"id": "T1-14", "t0": 546, "t1": 586, "h": "MOD", "texto": "¿Qué os ha ayudado a sobrellevarlo?"}, {"id": "T1-15", "t0": 588, "t1": 628, "h": "P3", "texto": "Las otras familias, sin duda. Cuando llegué de Buenos Aires no conocía a nadie, y fueron otras madres las que me enseñaron dónde pedir cada cosa."}, {"id": "T1-16", "t0": 630, "t1": 670, "h": "P2", "texto": "En el grupo de WhatsApp de la asociación nos pasamos de todo: plazas, abogados, hasta ropa. Nadie te entiende como otra familia que está pasando lo mismo."}, {"id": "T1-17", "t0": 672, "t1": 712, "h": "P1", "texto": "Y te sientes menos rara. Hablar con alguien que no te mira con pena ya es un alivio enorme."}, {"id": "T1-18", "t0": 714, "t1": 754, "h": "MOD", "texto": "¿Cómo veis el futuro?"}, {"id": "T1-19", "t0": 756, "t1": 796, "h": "P4", "texto": "Yo tengo setenta y cuatro años. Lo que me quita el sueño es qué va a pasar con él cuando no estemos ni su madre ni yo."}, {"id": "T1-20", "t0": 798, "t1": 838, "h": "P1", "texto": "Lo mismo pienso yo. ¿Quién va a cuidar de Lucía cuando seamos mayores? Nadie quiere hablar de eso, pero está siempre ahí."}, {"id": "T1-21", "t0": 840, "t1": 880, "h": "P3", "texto": "Yo dejé mi trabajo de enfermera para poder llevarlo a todas las terapias. Mi vida está en pausa desde hace seis años, y a veces me cuesta reconocerme."}, {"id": "T1-22", "t0": 882, "t1": 922, "h": "P2", "texto": "A mí me llamaron el 15 de marzo para decirme que perdía la plaza de respiro. Mi mujer y yo llevamos meses sin una tarde para nosotros. Si queréis contactar conmigo, mi teléfono es 612 345 678."}, {"id": "T1-23", "t0": 924, "t1": 964, "h": "MOD", "texto": "¿Queréis añadir algo más antes de terminar?"}, {"id": "T1-24", "t0": 966, "t1": 1006, "h": "P3", "texto": "Que nos pregunten a las familias antes de diseñar los servicios. Sabemos mucho más de lo que creen."}], "dur": 1008}], "ents": [], "arboles": [{"id": "A1", "lente": "tematica", "nombre": "Temática", "fecha": "2026-09-30T10:00:00Z", "codigos": [{"id": "c3", "nombre": "El diagnóstico como ruptura", "definicion": "Cómo se comunica el diagnóstico y el impacto emocional inmediato y duradero en la familia.", "segs": ["T1-3", "T1-4", "T1-5", "T1-6"], "citas": [{"seg": "T1-3", "texto": "nos lo soltó en el pasillo, de pie, en dos minutos"}], "hijos": [{"id": "c1", "nombre": "Una noticia dada sin cuidado", "definicion": "La forma de comunicar: prisa, lugar inadecuado, lenguaje técnico sin explicación.", "segs": ["T1-3", "T1-4"], "citas": [{"seg": "T1-3", "texto": "Salí de allí sin saber ni qué preguntar"}, {"seg": "T1-4", "texto": "Te dan un papel con una palabra que no entiendes"}], "hijos": [], "nivel": 2, "cierre": "pocos fragmentos"}, {"id": "c2", "nombre": "La culpa que no se va", "definicion": "Preguntas sobre la propia responsabilidad que persisten y se transmiten entre generaciones.", "segs": ["T1-5", "T1-6"], "citas": [{"seg": "T1-5", "texto": "Esa culpa no se va nunca del todo"}, {"seg": "T1-6", "texto": "no sabía qué decirle para que dejara de culparse"}], "hijos": [], "nivel": 2, "cierre": "pocos fragmentos"}], "nivel": 1, "cierre": ""}, {"id": "c10", "nombre": "Pelear con el sistema", "definicion": "Relación con la administración, la escuela y los servicios: obstáculos, trato recibido y excepciones.", "segs": ["T1-8", "T1-9", "T1-10", "T1-11", "T1-12", "T1-13"], "citas": [{"seg": "T1-8", "texto": "Un infierno de papeles"}], "hijos": [{"id": "c7", "nombre": "La burocracia como segundo diagnóstico", "definicion": "Procedimientos lentos y repetitivos que desgastan tanto como la propia discapacidad.", "segs": ["T1-8", "T1-9", "T1-10"], "citas": [{"seg": "T1-8", "texto": "esperamos casi dos años"}], "hijos": [{"id": "c4", "nombre": "Esperas que llegan tarde", "definicion": "Plazos que hacen inútil la ayuda cuando por fin llega.", "segs": ["T1-8"], "citas": [{"seg": "T1-8", "texto": "cuando llegó la resolución el niño ya necesitaba otra cosa"}], "hijos": [], "nivel": 3, "cierre": "pocos fragmentos"}, {"id": "c5", "nombre": "Contar la historia una y otra vez", "definicion": "Falta de continuidad entre profesionales.", "segs": ["T1-9"], "citas": [{"seg": "T1-9", "texto": "tienes que volver a contar toda la historia desde el principio"}], "hijos": [], "nivel": 3, "cierre": "pocos fragmentos"}, {"id": "c6", "nombre": "Sentirse examinada", "definicion": "La valoración vivida como sospecha sobre la necesidad real.", "segs": ["T1-10"], "citas": [{"seg": "T1-10", "texto": "me sentí examinada, como si tuviera que demostrar que mi hijo de verdad lo necesita"}], "hijos": [], "nivel": 3, "cierre": "pocos fragmentos"}], "nivel": 2, "cierre": ""}, {"id": "c8", "nombre": "Inclusión sobre el papel", "definicion": "Distancia entre el discurso inclusivo de la escuela y la práctica cotidiana.", "segs": ["T1-11", "T1-12"], "citas": [{"seg": "T1-11", "texto": "estaba más tiempo en el pasillo con una monitora que en clase"}, {"seg": "T1-12", "texto": "La inclusión está en el papel"}], "hijos": [], "nivel": 2, "cierre": "pocos fragmentos"}, {"id": "c9", "nombre": "Profesionales que marcan la diferencia", "definicion": "Excepciones positivas: profesionales que explican y tratan a la familia como parte del equipo.", "segs": ["T1-13"], "citas": [{"seg": "T1-13", "texto": "nos trataba como parte del equipo"}], "hijos": [], "nivel": 2, "cierre": "pocos fragmentos"}], "nivel": 1, "cierre": ""}, {"id": "c11", "nombre": "Las otras familias como sostén", "definicion": "Apoyo entre iguales: información práctica, comprensión y alivio emocional.", "segs": ["T1-15", "T1-16", "T1-17"], "citas": [{"seg": "T1-15", "texto": "fueron otras madres las que me enseñaron dónde pedir cada cosa"}, {"seg": "T1-16", "texto": "Nadie te entiende como otra familia que está pasando lo mismo"}, {"seg": "T1-17", "texto": "Hablar con alguien que no te mira con pena ya es un alivio enorme"}], "hijos": [], "nivel": 1, "cierre": "ideas agotadas: los tres fragmentos expresan la misma idea de apoyo mutuo"}, {"id": "c14", "nombre": "El futuro como amenaza", "definicion": "Preocupación por quién cuidará cuando los cuidadores falten, y renuncias del presente.", "segs": ["T1-19", "T1-20", "T1-21", "T1-22"], "citas": [{"seg": "T1-19", "texto": "qué va a pasar con él cuando no estemos"}], "hijos": [{"id": "c12", "nombre": "¿Quién cuidará cuando no estemos?", "definicion": "Miedo a la ausencia de los cuidadores principales.", "segs": ["T1-19", "T1-20"], "citas": [{"seg": "T1-19", "texto": "Lo que me quita el sueño es qué va a pasar con él"}, {"seg": "T1-20", "texto": "Nadie quiere hablar de eso, pero está siempre ahí"}], "hijos": [], "nivel": 2, "cierre": "pocos fragmentos"}, {"id": "c13", "nombre": "La vida propia en pausa", "definicion": "Renuncias laborales, de pareja y de tiempo propio.", "segs": ["T1-21", "T1-22"], "citas": [{"seg": "T1-21", "texto": "Mi vida está en pausa desde hace seis años"}, {"seg": "T1-22", "texto": "llevamos meses sin una tarde para nosotros"}], "hijos": [], "nivel": 2, "cierre": "pocos fragmentos"}], "nivel": 1, "cierre": ""}], "relaciones": [], "llamadas": 9}, {"id": "A2", "lente": "relacional", "nombre": "Relacional", "fecha": "2026-09-30T10:05:00Z", "codigos": [{"id": "c15", "nombre": "Condiciones: cómo llega el diagnóstico", "definicion": "Circunstancias del diagnóstico que condicionan la experiencia posterior.", "segs": ["T1-3", "T1-4", "T1-5"], "citas": [{"seg": "T1-4", "texto": "nadie se sentó con nosotros"}], "hijos": [], "nivel": 1, "cierre": "ideas agotadas: la condición central es la falta de acompañamiento"}, {"id": "c18", "nombre": "Interacciones con las instituciones", "definicion": "Encuentros con servicios, valoración y escuela, vividos como lucha o como sospecha.", "segs": ["T1-8", "T1-9", "T1-10", "T1-11", "T1-12"], "citas": [{"seg": "T1-10", "texto": "Y te miran como si exageraras"}], "hijos": [{"id": "c16", "nombre": "Desconfianza institucional percibida", "definicion": "La familia se siente puesta a prueba.", "segs": ["T1-10", "T1-12"], "citas": [{"seg": "T1-12", "texto": "nos llaman para que vayamos nosotros o que el niño se quede en casa"}], "hijos": [], "nivel": 2, "cierre": "pocos fragmentos"}, {"id": "c17", "nombre": "Desgaste por fragmentación", "definicion": "Servicios descoordinados que obligan a repetir.", "segs": ["T1-8", "T1-9"], "citas": [{"seg": "T1-9", "texto": "Cada vez que cambias de profesional"}], "hijos": [], "nivel": 2, "cierre": "pocos fragmentos"}], "nivel": 1, "cierre": ""}, {"id": "c21", "nombre": "Estrategias de afrontamiento", "definicion": "Lo que hacen las familias para sostenerse.", "segs": ["T1-13", "T1-15", "T1-16", "T1-17", "T1-24"], "citas": [{"seg": "T1-16", "texto": "nos pasamos de todo: plazas, abogados, hasta ropa"}], "hijos": [{"id": "c19", "nombre": "Redes entre familias", "definicion": "Apoyo informal y organizado entre iguales.", "segs": ["T1-15", "T1-16", "T1-17"], "citas": [{"seg": "T1-15", "texto": "no conocía a nadie"}], "hijos": [], "nivel": 2, "cierre": "ideas agotadas"}, {"id": "c20", "nombre": "Reivindicar el saber de las familias", "definicion": "Exigencia de participar en el diseño de los servicios.", "segs": ["T1-24"], "citas": [{"seg": "T1-24", "texto": "Sabemos mucho más de lo que creen"}], "hijos": [], "nivel": 2, "cierre": "pocos fragmentos"}], "nivel": 1, "cierre": ""}, {"id": "c22", "nombre": "Consecuencias para la vida familiar", "definicion": "Efectos sobre el bienestar, el trabajo y la proyección de futuro.", "segs": ["T1-19", "T1-20", "T1-21", "T1-22"], "citas": [{"seg": "T1-21", "texto": "dejé mi trabajo de enfermera para poder llevarlo a todas las terapias"}], "hijos": [], "nivel": 1, "cierre": "ideas agotadas: las consecuencias se agrupan en una sola idea de sobrecarga"}], "relaciones": [{"de": "Interacciones con las instituciones", "a": "Consecuencias para la vida familiar", "tipo": "agrava", "explicacion": "La pérdida de servicios de respiro y las esperas aumentan la sobrecarga.", "segmentos": ["T1-8", "T1-22"]}, {"de": "Estrategias de afrontamiento", "a": "Interacciones con las instituciones", "tipo": "estrategia ante", "explicacion": "Las redes entre familias compensan la falta de información institucional.", "segmentos": ["T1-15", "T1-16"]}], "llamadas": 6}], "creado": 0};
+$('btnDemo').onclick = () => { P = JSON.parse(JSON.stringify(DEMO)); P._demo = true; P.ents = []; detectaTodo(false); arbolSel = P.arboles[0].id; go(4); toast('Estudio de ejemplo (ficticio): un grupo focal ya transcrito. Mira qué detecta la anonimización y después los árboles del paso 5.', 7000); };
+if(!localStorage.getItem('ia_openai_key') && localStorage.getItem('openai_key')) localStorage.setItem('ia_openai_key', localStorage.getItem('openai_key'));
+go(0);
+</script>
+</body>
+</html>
